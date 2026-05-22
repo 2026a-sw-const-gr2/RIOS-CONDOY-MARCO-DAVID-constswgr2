@@ -1,0 +1,368 @@
+/* =============================================
+   GESTOR DE SUSCRIPCIONES — EPN
+   Taller Construcción de Software
+   ============================================= */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #f5f5f0;
+  color: #1a1a1a;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+}
+
+/* ---- CONTAINER ---- */
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ---- HEADER ---- */
+.header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.header-row h1 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #111;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #777;
+  margin-top: 2px;
+}
+
+/* ---- BUTTONS ---- */
+.btn-primary {
+  background: #111;
+  color: #fff;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.btn-primary:hover { background: #333; }
+
+.btn-secondary {
+  background: transparent;
+  color: #555;
+  border: 1px solid #ccc;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.btn-secondary:hover { background: #f0f0f0; }
+
+.btn-edit {
+  flex: 1;
+  background: transparent;
+  color: #444;
+  border: 1px solid #ddd;
+  padding: 6px 0;
+  border-radius: 7px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.btn-edit:hover { background: #f5f5f5; }
+
+.btn-delete {
+  flex: 1;
+  background: transparent;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+  padding: 6px 0;
+  border-radius: 7px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.btn-delete:hover { background: #fff1f1; }
+
+/* ---- STATS BAR ---- */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.stat {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+}
+
+.stat .lbl {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.stat .val {
+  font-size: 22px;
+  font-weight: 600;
+  color: #111;
+}
+
+.stat .val.small {
+  font-size: 13px;
+  font-weight: 500;
+  padding-top: 5px;
+}
+
+/* ---- CARD GRID ---- */
+.sub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 2rem;
+}
+
+/* ---- SUBSCRIPTION CARD ---- */
+.sub-card {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.sub-card:hover {
+  border-color: #bbb;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* ---- BADGE ---- */
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 10px;
+  border-radius: 20px;
+  margin-bottom: 8px;
+}
+
+.badge-streaming { background: #dcfce7; color: #166534; }
+.badge-anime     { background: #fce7f3; color: #9d174d; }
+.badge-celular   { background: #dbeafe; color: #1e3a8a; }
+.badge-gaming    { background: #ede9fe; color: #4c1d95; }
+.badge-otro      { background: #f3f4f6; color: #374151; }
+
+/* ---- CARD CONTENT ---- */
+.sub-card h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 2px;
+  color: #111;
+}
+
+.sub-card .plan {
+  font-size: 12px;
+  color: #888;
+  margin: 0 0 10px;
+}
+
+.sub-card .price {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.sub-card .price span {
+  font-size: 13px;
+  font-weight: 400;
+  color: #888;
+}
+
+.sub-card .due {
+  font-size: 12px;
+  color: #777;
+  margin: 4px 0 6px;
+}
+
+.sub-card .due.urgent { color: #b91c1c; font-weight: 500; }
+.sub-card .due.soon   { color: #92400e; font-weight: 500; }
+
+.sub-card .metodo-tag {
+  font-size: 11px;
+  color: #999;
+  margin: 0 0 12px;
+}
+
+.card-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+/* ---- EMPTY STATE ---- */
+.empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #aaa;
+  font-size: 14px;
+  line-height: 2;
+}
+
+.empty-icon {
+  font-size: 36px;
+}
+
+/* ---- EVENT LOG ---- */
+.event-log {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+}
+
+.event-log h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.log-empty {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.log-item {
+  font-size: 11px;
+  font-family: 'Cascadia Code', 'Courier New', monospace;
+  color: #555;
+  padding: 4px 0;
+  border-bottom: 1px solid #f0f0f0;
+  line-height: 1.5;
+}
+
+.log-item:last-child { border-bottom: none; }
+.log-item .ok    { color: #16a34a; }
+.log-item .fail  { color: #dc2626; }
+
+/* ---- MODAL ---- */
+.modal-bg {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-bg.open {
+  display: flex;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.75rem;
+  width: 380px;
+  max-width: 95vw;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+}
+
+.modal h2 {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 1.2rem;
+  color: #111;
+}
+
+/* ---- FORM ---- */
+.form-row {
+  margin-bottom: 12px;
+}
+
+.form-row label {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.form-row input,
+.form-row select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 7px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #111;
+  background: #fff;
+  transition: border-color 0.15s;
+  outline: none;
+}
+
+.form-row input:focus,
+.form-row select:focus {
+  border-color: #888;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 1.2rem;
+}
+
+.form-actions button { flex: 1; }
+
+/* ---- TOAST ---- */
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  background: #111;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.toast.show { opacity: 1; }
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 600px) {
+  .stats-bar { grid-template-columns: 1fr; }
+  .header-row { flex-direction: column; }
+}
