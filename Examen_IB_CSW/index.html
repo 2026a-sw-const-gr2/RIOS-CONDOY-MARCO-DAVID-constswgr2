@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestor de Suscripciones — EPN</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- HEADER -->
+    <div class="header-row">
+      <div>
+        <h1>Gestor de Suscripciones</h1>
+        <p class="subtitle">Taller Construcción de Software — EPN</p>
+      </div>
+      <button class="btn-primary" onclick="openModal()">+ Nueva suscripción</button>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-bar">
+      <div class="stat">
+        <p class="lbl">Total suscripciones</p>
+        <p class="val" id="stat-total">0</p>
+      </div>
+      <div class="stat">
+        <p class="lbl">Gasto mensual</p>
+        <p class="val" id="stat-gasto">$0.00</p>
+      </div>
+      <div class="stat">
+        <p class="lbl">Próximo pago</p>
+        <p class="val small" id="stat-prox">—</p>
+      </div>
+    </div>
+
+    <!-- CARDS GRID -->
+    <div class="sub-grid" id="sub-grid">
+      <div class="empty" id="empty-msg">
+        <span class="empty-icon">💳</span><br/>
+        No hay suscripciones aún.<br/>Agrega una con el botón.
+      </div>
+    </div>
+
+    <!-- EVENT LOG -->
+    <div class="event-log">
+      <h3>📡 Eventos enviados al EPN Event Manager</h3>
+      <div id="log-container">
+        <p class="log-empty">Los eventos aparecerán aquí cuando el hub esté corriendo.</p>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+
+  <!-- MODAL -->
+  <div class="modal-bg" id="modal-bg">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <h2 id="modal-title">Nueva suscripción</h2>
+
+      <div class="form-row">
+        <label for="f-nombre">Nombre del servicio *</label>
+        <input type="text" id="f-nombre" placeholder="ej. Spotify, Crunchyroll, TuEnti..." maxlength="80" />
+      </div>
+
+      <div class="form-row">
+        <label for="f-cat">Categoría</label>
+        <select id="f-cat">
+          <option value="streaming">Streaming</option>
+          <option value="anime">Anime</option>
+          <option value="celular">Plan celular</option>
+          <option value="gaming">Gaming</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="f-plan">Plan / Descripción</label>
+        <input type="text" id="f-plan" placeholder="ej. Premium Individual" maxlength="100" />
+      </div>
+
+      <div class="form-row">
+        <label for="f-valor">Valor mensual (USD) *</label>
+        <input type="number" id="f-valor" min="0" max="9999" step="0.01" placeholder="0.00" />
+      </div>
+
+      <div class="form-row">
+        <label for="f-dia">Día de pago (1–31) *</label>
+        <input type="number" id="f-dia" min="1" max="31" placeholder="ej. 15" />
+      </div>
+
+      <div class="form-row">
+        <label for="f-metodo">Método de pago</label>
+        <input type="text" id="f-metodo" placeholder="ej. Visa *4567" maxlength="60" />
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-secondary" onclick="closeModal()">Cancelar</button>
+        <button class="btn-primary" onclick="guardar()" id="btn-guardar">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
