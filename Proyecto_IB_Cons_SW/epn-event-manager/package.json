@@ -77,6 +77,12 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "coverageThreshold": {
+      "**/*.service.ts": {
+        "statements": 80,
+        "lines": 80
+      }
+    }
   }
 }

@@ -1,0 +1,32 @@
+name: "✨ Feature"
+description: Nueva funcionalidad
+title: "[Feature]: "
+labels: ["feature"]
+body:
+  - type: textarea
+    id: descripcion
+    attributes:
+      label: Descripción
+      description: ¿Qué funcionalidad se necesita y para qué?
+    validations:
+      required: true
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptación
+      description: Checklist verificable (Definition of Ready)
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: dropdown
+    id: repositorio
+    attributes:
+      label: Repositorio afectado
+      options:
+        - backend (epn-event-manager)
+        - frontend (subscription-manager)
+        - ambos
+    validations:
+      required: true

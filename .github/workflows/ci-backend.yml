@@ -1,0 +1,41 @@
+name: CI Backend (epn-event-manager)
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+defaults:
+  run:
+    working-directory: Proyecto_IB_Cons_SW/epn-event-manager
+
+jobs:
+  build-test:
+    name: Lint → Build → Test → Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Proyecto_IB_Cons_SW/epn-event-manager/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: 1. Linting
+        run: npm run lint
+
+      - name: 2. Build
+        run: npm run build
+
+      - name: 3. Tests
+        run: npm test
+
+      - name: 4. Coverage Check (mínimo 80% en capa de servicios)
+        run: npm run test:cov

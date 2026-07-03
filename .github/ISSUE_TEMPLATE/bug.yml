@@ -1,0 +1,36 @@
+name: "🐞 Bug"
+description: Corrección de errores
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: descripcion
+    attributes:
+      label: Descripción del problema
+      description: ¿Qué está fallando?
+    validations:
+      required: true
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Pasos para reproducir
+    validations:
+      required: true
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptación
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true
+  - type: dropdown
+    id: repositorio
+    attributes:
+      label: Repositorio afectado
+      options:
+        - backend (epn-event-manager)
+        - frontend (subscription-manager)
+        - ambos
+    validations:
+      required: true

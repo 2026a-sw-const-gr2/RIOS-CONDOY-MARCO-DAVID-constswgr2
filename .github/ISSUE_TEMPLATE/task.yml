@@ -1,0 +1,30 @@
+name: "📋 Task"
+description: Documentación, investigación o configuración
+title: "[Task]: "
+labels: ["task"]
+body:
+  - type: textarea
+    id: descripcion
+    attributes:
+      label: Descripción
+      description: ¿Qué hay que hacer y por qué?
+    validations:
+      required: true
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptación
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true
+  - type: dropdown
+    id: repositorio
+    attributes:
+      label: Repositorio afectado
+      options:
+        - backend (epn-event-manager)
+        - frontend (subscription-manager)
+        - ambos
+    validations:
+      required: true

@@ -1,0 +1,38 @@
+name: "🧹 Technical Debt"
+description: Refactorización y deuda técnica
+title: "[Technical Debt]: "
+labels: ["technical-debt"]
+body:
+  - type: textarea
+    id: descripcion
+    attributes:
+      label: Code smell o deuda identificada
+      description: ¿Qué archivo/función y qué problema tiene? (ej. God Method, duplicación)
+    validations:
+      required: true
+  - type: textarea
+    id: plan
+    attributes:
+      label: Plan de refactorización propuesto
+    validations:
+      required: true
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptación
+      placeholder: |
+        - [ ] Comportamiento externo sin cambios
+        - [ ] Pruebas existentes siguen pasando
+        - [ ] Cobertura de la lógica de negocio se mantiene o mejora
+    validations:
+      required: true
+  - type: dropdown
+    id: repositorio
+    attributes:
+      label: Repositorio afectado
+      options:
+        - backend (epn-event-manager)
+        - frontend (subscription-manager)
+        - ambos
+    validations:
+      required: true
