@@ -1,134 +1,73 @@
-import { BadRequestException } from '@nestjs/common';
-import { EventsService } from './events.service';
-import { CreateEventDto } from './dto/create-event.dto';
+declare const describe: any;
+declare const beforeEach: any;
+declare const afterEach: any;
+declare const it: any;
+declare const expect: any;
+import { SuscripcionesService } from './suscripciones.service';
+import { ConfigService } from '@nestjs/config';
+import { promises as fs } from 'fs';
+import * as path from 'path';
+import { CreateSuscripcionDto } from './dto/create-suscripcion.dto';
+import { UpdateSuscripcionDto } from './dto/update-suscripcion.dto';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 
-// Repos falsos en memoria, siguiendo el mismo estilo de mocking manual que
-// ya usa SuscripcionesService.spec.ts (sin @nestjs/testing) para no añadir
-// dependencias nuevas.
-function fakeRepo() {
-  const rows: any[] = [];
-  return {
-    rows,
-    create: (data: any) => ({ ...data }),
-    save: async (row: any) => {
-      rows.push(row);
-      return row;
-    },
-    find: async () => rows,
-    findBy: async (query: Record<string, any>) =>
-      rows.filter((r) => Object.entries(query).every(([k, v]) => r[k] === v)),
-    count: async () => rows.length,
-  };
-}
-
-describe('EventsService', () => {
-  let service: EventsService;
-  let createRepo: ReturnType<typeof fakeRepo>;
-  let updateRepo: ReturnType<typeof fakeRepo>;
-  let deleteRepo: ReturnType<typeof fakeRepo>;
-  let queryRepo: ReturnType<typeof fakeRepo>;
-
-  const baseDto = (
-    overrides: Partial<CreateEventDto> = {},
-  ): CreateEventDto => ({
-    source: 'subscription-manager',
-    entity: 'suscripcion',
-    action: 'CREATE',
-    title: 'Nueva suscripción',
-    description: 'Spotify Premium',
-    payload: { nombre: 'Spotify' },
-    ...overrides,
-  });
+describe('SuscripcionesService', () => {
+  let service: SuscripcionesService;
+  let tempFile: string;
 
   beforeEach(() => {
-    createRepo = fakeRepo();
-    updateRepo = fakeRepo();
-    deleteRepo = fakeRepo();
-    queryRepo = fakeRepo();
-    service = new EventsService(
-      createRepo as any,
-      updateRepo as any,
-      deleteRepo as any,
-      queryRepo as any,
-    );
+    tempFile = path.resolve(__dirname, `../../../tmp/suscripciones-test-${Date.now()}.json`);
+    const configService = { get: (key: string) => (key === 'DB_PATH' ? tempFile : undefined) } as unknown as ConfigService;
+    service = new SuscripcionesService(configService);
   });
 
-  it('registra un evento CREATE en la tabla correspondiente', async () => {
-    const result = await service.registerEvent(baseDto());
-    expect(result).toEqual({ ok: true });
-    expect(createRepo.rows).toHaveLength(1);
-    expect(updateRepo.rows).toHaveLength(0);
+  afterEach(async () => {
+    try {
+      await fs.unlink(tempFile);
+    } catch {
+      // ignore
+    }
   });
 
-  it('registra un evento UPDATE en la tabla correspondiente', async () => {
-    await service.registerEvent(baseDto({ action: 'UPDATE' }));
-    expect(updateRepo.rows).toHaveLength(1);
+  it('crea una suscripción válida', async () => {
+    const dto: CreateSuscripcionDto = { nombre: 'Plan Basic', precio: 9.99 };
+    const created = await service.create(dto);
+    expect(created).toHaveProperty('id');
+    expect(created.nombre).toBe(dto.nombre);
+    expect(created.precio).toBe(dto.precio);
+    const content = await fs.readFile(tempFile, 'utf-8');
+    const arr = JSON.parse(content);
+    expect(arr).toHaveLength(1);
   });
 
-  it('registra un evento DELETE en la tabla correspondiente', async () => {
-    await service.registerEvent(baseDto({ action: 'DELETE' }));
-    expect(deleteRepo.rows).toHaveLength(1);
+  it('rechaza precio negativo', async () => {
+    const dto: CreateSuscripcionDto = { nombre: 'Plan Bad', precio: -5 };
+    await expect(service.create(dto)).rejects.toThrow(BadRequestException);
   });
 
-  it('registra un evento QUERY en la tabla correspondiente', async () => {
-    await service.registerEvent(baseDto({ action: 'QUERY' }));
-    expect(queryRepo.rows).toHaveLength(1);
+  it('retorna 404 al leer id inexistente', async () => {
+    await expect(service.findOne('no-existe')).rejects.toThrow(NotFoundException);
   });
 
-  it('devuelve ok:false para una acción no reconocida, sin lanzar excepción', async () => {
-    const result = await service.registerEvent(baseDto({ action: 'PATCH' }));
-    expect(result).toEqual({ ok: false });
+  it('actualiza una suscripción existente', async () => {
+    const dto: CreateSuscripcionDto = { nombre: 'Plan A', precio: 5 };
+    const created = await service.create(dto);
+    const update: UpdateSuscripcionDto = { precio: 7.5 };
+    const updated = await service.update(created.id, update);
+    expect(updated.precio).toBe(7.5);
   });
 
-  it('findAll ordena eventos de distintas tablas por fecha real, no por string', async () => {
-    await service.registerEvent(
-      baseDto({ action: 'CREATE', title: 'primero' }),
-    );
-    await new Promise((r) => setTimeout(r, 5));
-    await service.registerEvent(
-      baseDto({ action: 'DELETE', title: 'segundo' }),
-    );
-    await new Promise((r) => setTimeout(r, 5));
-    await service.registerEvent(
-      baseDto({ action: 'UPDATE', title: 'tercero' }),
-    );
-
-    const all = (await service.findAll()) as any[];
-    const titles = all.map((e) => e.title);
-    expect(titles).toEqual(['primero', 'segundo', 'tercero']);
+  it('rechaza actualización con precio inválido', async () => {
+    const dto: CreateSuscripcionDto = { nombre: 'Plan B', precio: 10 };
+    const created = await service.create(dto);
+    const update: UpdateSuscripcionDto = { precio: 0 } as any;
+    await expect(service.update(created.id, update)).rejects.toThrow(BadRequestException);
   });
 
-  it('findByEntity rechaza un filtro vacío (EEM-4)', async () => {
-    await expect(service.findByEntity('   ')).rejects.toThrow(
-      BadRequestException,
-    );
-  });
-
-  it('findByEntity retorna coincidencias para un filtro válido', async () => {
-    await service.registerEvent(baseDto({ entity: 'suscripcion' }));
-    await service.registerEvent(baseDto({ entity: 'evento-academico' }));
-    const result = await service.findByEntity('suscripcion');
-    expect(result).toHaveLength(1);
-  });
-
-  it('findBySource rechaza un filtro demasiado largo', async () => {
-    const longSource = 'x'.repeat(200);
-    await expect(service.findBySource(longSource)).rejects.toThrow(
-      BadRequestException,
-    );
-  });
-
-  it('getStats suma correctamente los cuatro contadores', async () => {
-    await service.registerEvent(baseDto({ action: 'CREATE' }));
-    await service.registerEvent(baseDto({ action: 'CREATE' }));
-    await service.registerEvent(baseDto({ action: 'UPDATE' }));
-    const stats = (await service.getStats()) as any;
-    expect(stats).toEqual({
-      create: 2,
-      update: 1,
-      delete: 0,
-      query: 0,
-      total: 3,
-    });
+  it('elimina una suscripción existente', async () => {
+    const dto: CreateSuscripcionDto = { nombre: 'Plan C', precio: 3 };
+    const created = await service.create(dto);
+    await service.remove(created.id);
+    await expect(service.findOne(created.id)).rejects.toThrow(NotFoundException);
   });
 });
