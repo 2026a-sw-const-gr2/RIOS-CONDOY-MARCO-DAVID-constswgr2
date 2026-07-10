@@ -17,18 +17,19 @@ export class SuscripcionesService {
     this.dbPath = path.isAbsolute(configured) ? configured : path.resolve(process.cwd(), configured);
   }
 
-  private async readDb(): Promise<Suscripcion[]> {
-    try {
-      const content = await fs.readFile(this.dbPath, 'utf-8');
-      return JSON.parse(content) as Suscripcion[];
-} catch (err) {
-  if (err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT') {
-    return [];
+private async readDb(): Promise<Suscripcion[]> {
+  try {
+    const content = await fs.readFile(this.dbPath, 'utf-8');
+    return JSON.parse(content) as Suscripcion[];
+  } catch (err) {
+    const nodeErr = err as NodeJS.ErrnoException;
+    if (nodeErr.code === 'ENOENT') {
+      return [];
+    }
+    this.logger.error({ action: 'READ_DB_FAILED', error: err instanceof Error ? err.message : String(err) });
+    throw err;
   }
-  this.logger.error({ action: 'READ_DB_FAILED', error: err instanceof Error ? err.message : String(err) });
-  throw err;
 }
-  }
 
   private async writeDb(data: Suscripcion[]) {
     try {
