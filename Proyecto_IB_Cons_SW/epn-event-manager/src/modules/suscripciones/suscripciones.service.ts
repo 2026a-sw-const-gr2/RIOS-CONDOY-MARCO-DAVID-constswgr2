@@ -21,13 +21,13 @@ export class SuscripcionesService {
     try {
       const content = await fs.readFile(this.dbPath, 'utf-8');
       return JSON.parse(content) as Suscripcion[];
-    } catch (err) {
-      if ((err as any).code === 'ENOENT') {
-        return [];
-      }
-      this.logger.error({ action: 'READ_DB_FAILED', error: (err as Error).message });
-      throw err;
-    }
+} catch (err) {
+  if (err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT') {
+    return [];
+  }
+  this.logger.error({ action: 'READ_DB_FAILED', error: err instanceof Error ? err.message : String(err) });
+  throw err;
+}
   }
 
   private async writeDb(data: Suscripcion[]) {
