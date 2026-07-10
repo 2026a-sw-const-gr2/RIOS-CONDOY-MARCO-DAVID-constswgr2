@@ -31,15 +31,15 @@ private async readDb(): Promise<Suscripcion[]> {
   }
 }
 
-  private async writeDb(data: Suscripcion[]) {
-    try {
-      await fs.mkdir(path.dirname(this.dbPath), { recursive: true });
-      await fs.writeFile(this.dbPath, JSON.stringify(data, null, 2), 'utf-8');
-    } catch (err) {
-      this.logger.error({ action: 'WRITE_DB_FAILED', error: (err as Error).message });
-      throw err;
-    }
+private async writeDb(data: Suscripcion[]): Promise<void> {
+  try {
+    await fs.mkdir(path.dirname(this.dbPath), { recursive: true });
+    await fs.writeFile(this.dbPath, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (err) {
+    this.logger.error({ action: 'WRITE_DB_FAILED', error: err instanceof Error ? err.message : String(err) });
+    throw err;
   }
+}
 
   async create(dto: CreateSuscripcionDto): Promise<Suscripcion> {
     if (dto.precio <= 0) throw new BadRequestException('Precio inválido');
