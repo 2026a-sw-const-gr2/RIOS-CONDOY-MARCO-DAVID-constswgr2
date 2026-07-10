@@ -3,7 +3,7 @@ declare const beforeEach: any;
 declare const afterEach: any;
 declare const it: any;
 declare const expect: any;
-import { SuscripcionesService } from './suscripciones.service';
+import { SuscripcionesService } from '../suscripciones.service';
 import { ConfigService } from '@nestjs/config';
 import { promises as fs } from 'fs';
 import * as path from 'path';
