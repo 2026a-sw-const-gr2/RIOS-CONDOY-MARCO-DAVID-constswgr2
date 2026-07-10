@@ -11,11 +11,11 @@ export async function bootstrap(): Promise<void> {
       new winston.transports.Console({
         format: winston.format.combine(
           winston.format.timestamp(),
-          winston.format.printf(({ timestamp, level, message, ...meta }) => {
-            const msg = typeof message === 'object' ? JSON.stringify(message) : String(message);
-            const rest = Object.keys(meta).length ? JSON.stringify(meta) : '';
-            return `${String(timestamp)} ${String(level)}: ${msg} ${rest}`;
-          }),
+winston.format.printf(({ timestamp, level, message, ...meta }) => {
+  const msg = typeof message === 'string' ? message : JSON.stringify(message);
+  const rest = Object.keys(meta).length ? JSON.stringify(meta) : '';
+  return `${String(timestamp)} ${String(level)}: ${msg} ${rest}`;
+}),
         ),
       }),
     ],
