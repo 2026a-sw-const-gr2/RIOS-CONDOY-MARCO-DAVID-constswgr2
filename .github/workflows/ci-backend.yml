@@ -6,14 +6,50 @@ on:
   pull_request:
     branches: [main, develop]
 
-defaults:
-  run:
-    working-directory: Proyecto_IB_Cons_SW/epn-event-manager
-
 jobs:
-  build-test:
-    name: Lint → Build → Test → Coverage
+  # ── Job principal: II Bimestre (gate obligatorio para merge) ──
+  build-test-iib:
+    name: IIB — Lint → Build → Test → Coverage
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Proyecto_IIB_Cons_SW/epn-event-manager
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Proyecto_IIB_Cons_SW/epn-event-manager/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: 1. Linting
+        run: npm run lint
+
+      - name: 2. Build
+        run: npm run build
+
+      - name: 3. Tests
+        run: npm test
+
+      - name: 4. Coverage (umbral 80% en servicios)
+        run: npm run test:cov
+
+  # ── Job informativo: I Bimestre (no bloquea merge) ──
+  # Mantiene visibilidad sobre la deuda técnica heredada
+  # hasta que se cierre el ticket SUB-X / EEM-X correspondiente.
+  build-test-ib-info:
+    name: IB — Lint → Build → Test (informativo)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: Proyecto_IB_Cons_SW/epn-event-manager
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,8 +64,8 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
-      - name: 1. Linting
-        run: npm run lint
+      - name: 1. Linting (sin --fix, solo reporta)
+        run: npx eslint "{src,apps,libs,test}/**/*.ts"
 
       - name: 2. Build
         run: npm run build
@@ -37,5 +73,5 @@ jobs:
       - name: 3. Tests
         run: npm test
 
-      - name: 4. Coverage Check (mínimo 80% en capa de servicios)
+      - name: 4. Coverage
         run: npm run test:cov
