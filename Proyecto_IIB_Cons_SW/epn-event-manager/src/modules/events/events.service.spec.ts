@@ -187,9 +187,9 @@ describe('EventsService', () => {
       const query: QueryEventsDto = { page: 1, limit: 10, action: 'CREATE' };
       const result = await service.findAllPaginated(query);
       expect(result.total).toBe(2);
-      expect(result.data.every((e) => (e as { action: string }).action === 'CREATE')).toBe(
-        true,
-      );
+      expect(
+        result.data.every((e) => (e as { action: string }).action === 'CREATE'),
+      ).toBe(true);
     });
 
     it('filtra por source=academic-portal', async () => {
@@ -200,9 +200,11 @@ describe('EventsService', () => {
       };
       const result = await service.findAllPaginated(query);
       expect(result.total).toBe(2);
-      expect(result.data.every((e) => (e as { source: string }).source === 'academic-portal')).toBe(
-        true,
-      );
+      expect(
+        result.data.every(
+          (e) => (e as { source: string }).source === 'academic-portal',
+        ),
+      ).toBe(true);
     });
 
     it('combina filtros action + source', async () => {
@@ -214,6 +216,57 @@ describe('EventsService', () => {
       };
       const result = await service.findAllPaginated(query);
       expect(result.total).toBe(1);
+    });
+  });
+
+  describe('findByText (Feature F2 #10)', () => {
+    beforeEach(async () => {
+      await service.registerEvent(
+        baseDto({
+          action: 'CREATE',
+          source: 'subscription-manager',
+          title: 'Nueva suscripcion a Spotify',
+          description: 'Plan Premium',
+        }),
+      );
+      await service.registerEvent(
+        baseDto({
+          action: 'CREATE',
+          source: 'academic-portal',
+          title: 'Conferencia de ingenieria',
+          description: 'Evento para alumnos',
+        }),
+      );
+      await service.registerEvent(
+        baseDto({
+          action: 'UPDATE',
+          source: 'subscription-manager',
+          title: 'Cambio en suscripcion mensual',
+          description: 'Cambio del plan',
+        }),
+      );
+    });
+
+    it('encuentra coincidencias case-insensitive en title', async () => {
+      const result = await service.findByText('SPOTIFY');
+      expect(result).toHaveLength(1);
+      expect((result[0] as { title: string }).title).toContain('Spotify');
+    });
+
+    it('encuentra coincidencias en description', async () => {
+      const result = await service.findByText('alumnos');
+      expect(result).toHaveLength(1);
+    });
+
+    it('rechaza query menor a 2 caracteres', async () => {
+      await expect(service.findByText('a')).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it('devuelve array vacio si no hay matches', async () => {
+      const result = await service.findByText('inexistente-xyz');
+      expect(result).toEqual([]);
     });
   });
 });

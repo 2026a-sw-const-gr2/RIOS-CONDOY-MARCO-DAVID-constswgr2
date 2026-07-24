@@ -9,18 +9,8 @@ import { DeleteEventEntity } from '../../database/entities/delete-event.entity';
 import { QueryEventEntity } from '../../database/entities/query-event.entity';
 
 export type EventAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'QUERY';
-
 const MAX_FILTER_LENGTH = 120;
 
-/**
- * EventsService
- *
- * Refactorizado para el ticket EEM-1 (God Method), EEM-3 (orden incorrecto
- * en findAll) y EEM-4 (falta de validación en filtros). Antes, registerEvent
- * concentraba la construcción y persistencia de los 4 tipos de evento en un
- * único método con una cascada de if/else. Ahora cada acción tiene su propio
- * método privado (SRP) y registerEvent solo enruta.
- */
 @Injectable()
 export class EventsService {
   private readonly logger = new Logger(EventsService.name);
@@ -38,7 +28,6 @@ export class EventsService {
 
   async registerEvent(dto: CreateEventDto): Promise<{ ok: boolean }> {
     const action = (dto.action ?? '').toUpperCase() as EventAction;
-
     switch (action) {
       case 'CREATE':
         await this.handleCreate(dto);
@@ -53,7 +42,7 @@ export class EventsService {
         await this.handleQuery(dto);
         return { ok: true };
       default:
-        this.logger.warn(`Acción de evento no reconocida: "${dto.action}"`);
+        this.logger.warn(`Accion no reconocida: "${dto.action}"`);
         return { ok: false };
     }
   }
@@ -69,11 +58,8 @@ export class EventsService {
       recorded_at: this.nowIso(),
     });
     await this.createRepo.save(ev);
-    this.logger.log(
-      `Evento CREATE registrado (source=${dto.source}, entity=${dto.entity})`,
-    );
+    this.logger.log(`Evento CREATE registrado (source=${dto.source})`);
   }
-
   private async handleUpdate(dto: CreateEventDto): Promise<void> {
     const ev = this.updateRepo.create({
       source: dto.source,
@@ -85,11 +71,8 @@ export class EventsService {
       timestamp: this.nowIso(),
     });
     await this.updateRepo.save(ev);
-    this.logger.log(
-      `Evento UPDATE registrado (source=${dto.source}, entity=${dto.entity})`,
-    );
+    this.logger.log(`Evento UPDATE registrado (source=${dto.source})`);
   }
-
   private async handleDelete(dto: CreateEventDto): Promise<void> {
     const ev = this.deleteRepo.create({
       source: dto.source,
@@ -100,11 +83,8 @@ export class EventsService {
       createdAt: this.nowIso(),
     });
     await this.deleteRepo.save(ev);
-    this.logger.log(
-      `Evento DELETE registrado (source=${dto.source}, entity=${dto.entity})`,
-    );
+    this.logger.log(`Evento DELETE registrado (source=${dto.source})`);
   }
-
   private async handleQuery(dto: CreateEventDto): Promise<void> {
     const ev = this.queryRepo.create({
       source: dto.source,
@@ -116,9 +96,7 @@ export class EventsService {
       event_date: this.nowIso(),
     });
     await this.queryRepo.save(ev);
-    this.logger.debug(
-      `Evento QUERY registrado (source=${dto.source}, entity=${dto.entity})`,
-    );
+    this.logger.debug(`Evento QUERY registrado (source=${dto.source})`);
   }
 
   async findAll(): Promise<object[]> {
@@ -128,20 +106,13 @@ export class EventsService {
       this.deleteRepo.find(),
       this.queryRepo.find(),
     ]);
-
     const merged = [
       ...creates.map((e) => ({ ...e, _table: 'create_events' })),
       ...updates.map((e) => ({ ...e, _table: 'update_events' })),
       ...deletes.map((e) => ({ ...e, _table: 'delete_events' })),
       ...queries.map((e) => ({ ...e, _table: 'query_events' })),
     ];
-
-    // Fix EEM-3: las 4 tablas usan nombres de columna de fecha distintos
-    // (recorded_at / timestamp / createdAt / event_date) y antes se
-    // comparaban como strings crudos con localeCompare, lo que ordena mal
-    // si los formatos difieren. Ahora se normalizan a Date antes de comparar.
     merged.sort((a, b) => this.eventTimestamp(a) - this.eventTimestamp(b));
-
     return merged;
   }
 
@@ -155,26 +126,44 @@ export class EventsService {
     const limit = query.limit;
     const safeSource = query.source?.trim() || undefined;
     const action = query.action?.toUpperCase() as EventAction | undefined;
-
     const all = await this.findAll();
     const filtered = all.filter((e) => {
       const rec = e as Record<string, unknown>;
-      if (action && rec.action !== action) {
-        return false;
-      }
-      if (safeSource && rec.source !== safeSource) {
-        return false;
-      }
+      if (action && rec.action !== action) return false;
+      if (safeSource && rec.source !== safeSource) return false;
       return true;
     });
-
     const total = filtered.length;
     const lastPage = Math.max(1, Math.ceil(total / limit));
     const safePage = Math.min(page, lastPage);
     const skip = (safePage - 1) * limit;
-    const data = filtered.slice(skip, skip + limit);
+    return {
+      data: filtered.slice(skip, skip + limit),
+      total,
+      page: safePage,
+      lastPage,
+    };
+  }
 
-    return { data, total, page: safePage, lastPage };
+  async findByText(query: string): Promise<object[]> {
+    const safeQuery = this.sanitizeFilter(query, 'q');
+    if (safeQuery.length < 2)
+      throw new BadRequestException(
+        'El parametro "q" debe tener al menos 2 caracteres',
+      );
+    if (safeQuery.length > 80)
+      throw new BadRequestException(
+        'El parametro "q" es demasiado largo (max 80 caracteres)',
+      );
+    const needle = safeQuery.toLowerCase();
+    const all = await this.findAll();
+    return all.filter((event) => {
+      const rec = event as Record<string, unknown>;
+      const title = typeof rec.title === 'string' ? rec.title.toLowerCase() : '';
+      const description =
+        typeof rec.description === 'string' ? rec.description : '';
+      return title.includes(needle) || description.includes(needle);
+    });
   }
 
   async findBySource(source: string): Promise<object[]> {
@@ -189,10 +178,6 @@ export class EventsService {
   }
 
   async findByEntity(entity: string): Promise<object[]> {
-    // Fix EEM-4: antes "entity" se pasaba directo a findBy sin validar.
-    // TypeORM ya parametriza la consulta (no hay inyección SQL), pero no
-    // había ninguna validación de longitud/formato ni registro de intentos
-    // sospechosos. Se agrega sanitizeFilter para ambos casos.
     const safeEntity = this.sanitizeFilter(entity, 'entity');
     const [creates, updates, deletes, queries] = await Promise.all([
       this.createRepo.findBy({ entity: safeEntity }),
@@ -223,30 +208,25 @@ export class EventsService {
   private sanitizeFilter(value: string, fieldName: string): string {
     const trimmed = (value ?? '').trim();
     if (!trimmed) {
-      this.logger.warn(`Filtro "${fieldName}" vacío o inválido recibido`);
+      this.logger.warn(`Filtro "${fieldName}" vacio recibido`);
       throw new BadRequestException(
-        `El parámetro "${fieldName}" no puede estar vacío`,
+        `El parametro "${fieldName}" no puede estar vacio`,
       );
     }
     if (trimmed.length > MAX_FILTER_LENGTH) {
-      this.logger.warn(
-        `Filtro "${fieldName}" excede la longitud máxima permitida`,
-      );
+      this.logger.warn(`Filtro "${fieldName}" excede longitud maxima`);
       throw new BadRequestException(
-        `El parámetro "${fieldName}" es demasiado largo`,
+        `El parametro "${fieldName}" es demasiado largo`,
       );
     }
     return trimmed;
   }
-
   private serializePayload(payload: unknown): string {
     return JSON.stringify(payload ?? {});
   }
-
   private nowIso(): string {
     return new Date().toISOString();
   }
-
   private eventTimestamp(record: Record<string, unknown>): number {
     const raw =
       (record.recorded_at as string) ??
