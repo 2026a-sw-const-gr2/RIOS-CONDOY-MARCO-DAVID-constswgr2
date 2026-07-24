@@ -12,7 +12,12 @@ export async function bootstrap(): Promise<void> {
         format: winston.format.combine(
           winston.format.timestamp(),
           winston.format.printf(({ timestamp, level, message, ...meta }) => {
-            const msg = typeof message === 'object' ? JSON.stringify(message) : String(message);
+            const msg =
+              message === null || message === undefined
+                ? ''
+                : typeof message === 'object'
+                  ? JSON.stringify(message)
+                  : (message as string);
             const rest = Object.keys(meta).length ? JSON.stringify(meta) : '';
             return `${String(timestamp)} ${String(level)}: ${msg} ${rest}`;
           }),
@@ -34,6 +39,6 @@ export async function bootstrap(): Promise<void> {
 
   const port = Number(config.get('PORT')) || 3000;
   await app.listen(port);
-  // eslint-disable-next-line no-console
+
   console.log(`Server listening on port ${port}`);
 }

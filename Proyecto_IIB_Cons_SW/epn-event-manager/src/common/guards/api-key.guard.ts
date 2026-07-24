@@ -1,5 +1,12 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Request } from 'express';
 
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
@@ -7,11 +14,14 @@ export class ApiKeyGuard implements CanActivate {
   constructor(private readonly configService: ConfigService) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const req = context.switchToHttp().getRequest();
-    const key = req.headers['x-fis-epn-key'] || req.headers['X-FIS-EPN-KEY'];
+    const req = context.switchToHttp().getRequest<Request>();
+    const headerKey =
+      req.headers['x-fis-epn-key'] ?? req.headers['X-FIS-EPN-KEY'];
+    const key = Array.isArray(headerKey) ? headerKey[0] : headerKey;
     const expected = this.configService.get<string>('FIS_EPN_KEY');
     if (!key || key !== expected) {
-      const ip = req.ip || (req.connection && req.connection.remoteAddress) || 'unknown';
+      const ip =
+        req.ip ?? (req.socket && req.socket.remoteAddress) ?? 'unknown';
       this.logger.warn({ action: 'AUTH_FAILED', ip });
       throw new UnauthorizedException('API Key inválida o ausente');
     }

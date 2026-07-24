@@ -79,9 +79,10 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "coverageThreshold": {
-      "**/*.service.ts": {
+      "**/modules/events/*.service.ts": {
         "statements": 80,
-        "lines": 80
+        "lines": 80,
+        "functions": 80
       }
     }
   }

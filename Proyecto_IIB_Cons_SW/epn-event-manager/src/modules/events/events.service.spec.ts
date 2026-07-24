@@ -1,6 +1,11 @@
 import { BadRequestException } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
+import { Repository } from 'typeorm';
+import { CreateEventEntity } from '../../database/entities/create-event.entity';
+import { UpdateEventEntity } from '../../database/entities/update-event.entity';
+import { DeleteEventEntity } from '../../database/entities/delete-event.entity';
+import { QueryEventEntity } from '../../database/entities/query-event.entity';
 
 // Repos falsos en memoria, siguiendo el mismo estilo de mocking manual que
 // ya usa SuscripcionesService.spec.ts (sin @nestjs/testing) para no añadir
@@ -46,10 +51,10 @@ describe('EventsService', () => {
     deleteRepo = fakeRepo();
     queryRepo = fakeRepo();
     service = new EventsService(
-      createRepo as any,
-      updateRepo as any,
-      deleteRepo as any,
-      queryRepo as any,
+      createRepo as unknown as Repository<CreateEventEntity>,
+      updateRepo as unknown as Repository<UpdateEventEntity>,
+      deleteRepo as unknown as Repository<DeleteEventEntity>,
+      queryRepo as unknown as Repository<QueryEventEntity>,
     );
   });
 
