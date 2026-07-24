@@ -52,6 +52,8 @@ Carpeta de evidencias en `C:\Users\MRilt\Downloads\Evidencias_IIB\` con archivos
 |---|---|
 | Plan 9 tickets | [`docs/IIB_PLAN.md`](docs/IIB_PLAN.md) |
 | Reglas del Kanban | [`docs/IIB_KANBAN.md`](docs/IIB_KANBAN.md) |
+| Definition of Ready | [`docs/DOR.md`](docs/DOR.md) |
+| Definition of Done | [`docs/DOD.md`](docs/DOD.md) |
 | Features de Marco (detalle) | [`docs/IIB_TICKETS_MARCO.md`](docs/IIB_TICKETS_MARCO.md) |
 | Plantilla de Release v1.2.0 | [`docs/IIB_RELEASE_TEMPLATE.md`](docs/IIB_RELEASE_TEMPLATE.md) |
 | README del CRUD frontend | [`docs/subscription-manager.README.md`](docs/subscription-manager.README.md) |

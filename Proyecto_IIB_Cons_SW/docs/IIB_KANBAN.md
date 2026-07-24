@@ -5,15 +5,15 @@
 ## 🪧 Columnas
 
 1. **Backlog** — issues sin DoR completado.
-2. **Listo (cumple DoR)** — refinados, pueden entrar a trabajo.
-3. **En progreso** — máximo 1 por persona.
-4. **QA / Pipeline** — PR abierto esperando CI verde + code review.
-5. **Hecho** — merged a `develop`, DoD cumplido, tag creado.
+2. **En progreso** — máximo 1 por persona.
+3. **QA / Pipeline** — PR abierto esperando CI verde + code review.
+4. **Hecho** — merged a `develop`, DoD cumplido, tag creado.
+
+> 📘 Las reglas precisas de cuándo se mueve entre columnas están en [`DOR.md`](DOR.md) (qué requiere un ticket para entrar a "En progreso") y [`DOD.md`](DOD.md) (qué requiere para salir de "QA Pipeline").
 
 ## 🔄 Reglas de transición
 
-- `Backlog → Listo`: solo cuando cumple DoR (descripción, criterios, tipo, repo, responsable).
-- `Listo → En progreso`: la persona asignada mueve el issue y crea su rama efímera.
+- `Backlog → En progreso`: solo cuando cumple DoR (descripción, criterios, tipo, repo, responsable).
 - `En progreso → QA`: PR abierto (a `develop`) con `Closes #N`.
 - `QA → Hecho`: CI en verde + 1 aprobación + merge + tag `v1.1.x`.
 
