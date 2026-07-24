@@ -159,7 +159,7 @@ export class EventsService {
     const all = await this.findAll();
     return all.filter((event) => {
       const rec = event as Record<string, unknown>;
-      const title = typeof rec.title === 'string' ? rec.title : '';
+      const title = typeof rec.title === 'string' ? rec.title.toLowerCase() : '';
       const description =
         typeof rec.description === 'string' ? rec.description : '';
       return title.includes(needle) || description.includes(needle);
