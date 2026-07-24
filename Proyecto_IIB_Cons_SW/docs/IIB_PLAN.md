@@ -65,13 +65,22 @@ Ejecutar los **9 tickets** del II Bimestre con el ciclo:
 - `Proyecto_IIB_Cons_SW/epn-event-manager` — API REST NestJS.
 - `Proyecto_IIB_Cons_SW/subscription-manager` — CRUD frontend.
 
-## 📂 Evidencias físicas (carpeta externa)
+## 📂 Evidencias físicas (carpeta externa — fuera del repo)
 
-Cada ticket tiene una carpeta espejo en:
+Cada ticket tiene una carpeta espejo en una ruta **fuera** del repositorio
+(para no contaminar la rama). Estructura esperada:
+
 ```
-C:\Users\MRilt\Downloads\Evidencias_IIB\{persona}\{id-ticket}\README.md
+~/Downloads/Evidencias_IIB/
+├── _issues_para_crear_en_github/   ← borradores de issues por integrante
+├── marco/<id-ticket>/              ← 3 features de Marco
+├── ruben/<id-ticket>/              ← 3 bugs de Rubén
+└── jeremy/<id-ticket>/             ← 3 technical debts de Jeremy
 ```
-con los archivos del proyecto que se van a modificar (en su ruta exacta).
+
+Cada `id-ticket/` contiene un `README.md` con los criterios de aceptación
+y copias de los archivos del proyecto que se van a modificar (en su ruta
+relativa original) — para comparar antes/después en el video final.
 
 ## 🚦 Pipeline
 

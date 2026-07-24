@@ -1,43 +1,57 @@
-# Proyecto II Bimestre — EPN Event Manager + Subscription Manager
+# Proyecto_IIB_Cons_SW
 
-Carpeta de trabajo del II Bimestre (Construcción y Evolución de Software).
-Reutiliza la **infraestructura del I Bimestre** (DoR, DoD, branch strategy, plantillas de issue) y replica los **dos repos** del equipo como punto de partida.
+Trabajo del **II Bimestre** de Construcción y Evolución de Software.
+Reutiliza la base del I Bimestre (DoR, DoD, branch strategy, plantillas de issue y pipeline CI).
 
-## 📁 Contenido
+## 📁 Estructura
 
-| Carpeta/Archivo | Descripción |
-|---|---|
-| `epn-event-manager/` | API REST NestJS (réplica del I Bimestre). Backend del IIB. |
-| `subscription-manager/` | CRUD frontend de Suscripciones (copia del I Bimestre). Frontend del IIB. |
-| `IIB_PLAN.md` | Plan de trabajo, ramas, versionamiento. |
-| `IIB_KANBAN.md` | Columnas del tablero y reglas de transición. |
-| `IIB_TICKETS_MARCO.md` | Las 3 Features asignadas a Marco, formato issue. |
-| `IIB_RELEASE_TEMPLATE.md` | Plantilla para el Release oficial `v1.2.0`. |
+```
+Proyecto_IIB_Cons_SW/
+├── epn-event-manager/      ← Backend REST NestJS (punto de partida del IIB)
+├── subscription-manager/   ← Frontend CRUD de Suscripciones
+└── docs/                   ← Toda la documentación del IIB
+    ├── IIB_PLAN.md                ← Distribución 3×3 de tickets
+    ├── IIB_KANBAN.md              ← Reglas del tablero y transiciones
+    ├── IIB_TICKETS_MARCO.md       ← Detalle de los 3 Features
+    ├── IIB_RELEASE_TEMPLATE.md    ← Plantilla de Release v1.2.0
+    └── subscription-manager.README.md
+```
 
-## 🔗 Reutilización de la base del I Bimestre
+## 🎯 Objetivo del bimestre
 
-- **DoR / DoD / branch strategy:** `../Proyecto_IB_Cons_SW/{DoR,DoD,branch-strategy}.md`.
-- **Backlog existente:** `../Proyecto_IB_Cons_SW/backlog.md`.
-- **CI del II Bimestre:** `.github/workflows/ci-backend.yml` (un solo job apuntando a `epn-event-manager` de esta carpeta).
-- **Plantillas de issues:** `.github/ISSUE_TEMPLATE/{feature,bug,technical_debt,task}.yml`.
+9 tickets (3 por integrante) con tipificación estricta:
+- **Marco (yo):** 3 Feature
+- **Rubén Cuenca:** 3 Bug
+- **Jeremy Jiménez:** 3 Technical Debt
 
-## 🎯 Distribución de tickets (9 totales)
-
-| Estudiante | Categoría | Cantidad |
-|---|---|---|
-| Marco (yo) | Feature | 3 |
-| Rubén | Bug | 3 |
-| Jeremy | Technical Debt | 3 |
+> Detallado en [`docs/IIB_PLAN.md`](docs/IIB_PLAN.md).
 
 ## 🔀 Ramas
 
 - `main` — protegida; recibe el PR final del macro-release.
 - `develop` — protegida; rama de integración.
-- **Ramas efímeras** `feature/*`, `fix/*`, `refactor/*` — una por ticket.
+- **Ramas efímeras:** `feature/<id>-<slug>`, `fix/<id>-<slug>`, `refactor/<id>-<slug>` — una por ticket.
 
-> El setup de esta carpeta se hizo directo a `develop`, sin crear ramas artificiales (no es un ticket).
+## 🚦 Pipeline
+
+Un solo job `IIB — Lint → Build → Test → Coverage` apuntando a `epn-event-manager/`.
+Cobertura mínima 80% en `**/modules/events/*.service.ts` (validado por `coverageThreshold` en `package.json`).
 
 ## 🏷️ Versionamiento
 
-- Cada merge a `develop` → tag `v1.1.x` en orden.
-- Tras los 9 merges → PR `develop` → `main` + tag `v1.2.0` + Release con notas.
+- Cada merge a `develop` → tag `v1.1.x` (1-3 Marco, 4-6 Rubén, 7-9 Jeremy).
+- Tras los 9 merges → tag final `v1.2.0` + Release con notas.
+
+## 📂 Evidencias externas
+
+Carpeta de evidencias en `C:\Users\MRilt\Downloads\Evidencias_IIB\` con archivos espejo y borradores de issues por integrante.
+
+## 🔗 Referencias
+
+| Tema | Archivo |
+|---|---|
+| Plan 9 tickets | [`docs/IIB_PLAN.md`](docs/IIB_PLAN.md) |
+| Reglas del Kanban | [`docs/IIB_KANBAN.md`](docs/IIB_KANBAN.md) |
+| Features de Marco (detalle) | [`docs/IIB_TICKETS_MARCO.md`](docs/IIB_TICKETS_MARCO.md) |
+| Plantilla de Release v1.2.0 | [`docs/IIB_RELEASE_TEMPLATE.md`](docs/IIB_RELEASE_TEMPLATE.md) |
+| README del CRUD frontend | [`docs/subscription-manager.README.md`](docs/subscription-manager.README.md) |
