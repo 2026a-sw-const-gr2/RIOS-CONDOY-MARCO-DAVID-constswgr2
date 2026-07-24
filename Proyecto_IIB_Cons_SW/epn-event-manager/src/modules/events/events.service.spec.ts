@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
+import { QueryEventsDto } from './dto/query-events.dto';
 import { Repository } from 'typeorm';
 import { CreateEventEntity } from '../../database/entities/create-event.entity';
 import { UpdateEventEntity } from '../../database/entities/update-event.entity';
@@ -134,6 +135,85 @@ describe('EventsService', () => {
       delete: 0,
       query: 0,
       total: 3,
+    });
+  });
+
+  describe('findAllPaginated (Feature F1)', () => {
+    beforeEach(async () => {
+      await service.registerEvent(
+        baseDto({
+          action: 'CREATE',
+          source: 'subscription-manager',
+        }),
+      );
+      await service.registerEvent(
+        baseDto({
+          action: 'UPDATE',
+          source: 'subscription-manager',
+        }),
+      );
+      await service.registerEvent(
+        baseDto({
+          action: 'CREATE',
+          source: 'academic-portal',
+        }),
+      );
+      await service.registerEvent(
+        baseDto({
+          action: 'DELETE',
+          source: 'academic-portal',
+        }),
+      );
+    });
+
+    it('pagina con page=1 y limit=2 (devuelve primeros 2)', async () => {
+      const query: QueryEventsDto = { page: 1, limit: 2 };
+      const result = await service.findAllPaginated(query);
+      expect(result.total).toBe(4);
+      expect(result.page).toBe(1);
+      expect(result.lastPage).toBe(2);
+      expect(result.data).toHaveLength(2);
+    });
+
+    it('pagina con page=2 y limit=2 (devuelve los 2 últimos)', async () => {
+      const query: QueryEventsDto = { page: 2, limit: 2 };
+      const result = await service.findAllPaginated(query);
+      expect(result.total).toBe(4);
+      expect(result.page).toBe(2);
+      expect(result.data).toHaveLength(2);
+    });
+
+    it('filtra por action=CREATE', async () => {
+      const query: QueryEventsDto = { page: 1, limit: 10, action: 'CREATE' };
+      const result = await service.findAllPaginated(query);
+      expect(result.total).toBe(2);
+      expect(result.data.every((e) => (e as { action: string }).action === 'CREATE')).toBe(
+        true,
+      );
+    });
+
+    it('filtra por source=academic-portal', async () => {
+      const query: QueryEventsDto = {
+        page: 1,
+        limit: 10,
+        source: 'academic-portal',
+      };
+      const result = await service.findAllPaginated(query);
+      expect(result.total).toBe(2);
+      expect(result.data.every((e) => (e as { source: string }).source === 'academic-portal')).toBe(
+        true,
+      );
+    });
+
+    it('combina filtros action + source', async () => {
+      const query: QueryEventsDto = {
+        page: 1,
+        limit: 10,
+        action: 'CREATE',
+        source: 'academic-portal',
+      };
+      const result = await service.findAllPaginated(query);
+      expect(result.total).toBe(1);
     });
   });
 });

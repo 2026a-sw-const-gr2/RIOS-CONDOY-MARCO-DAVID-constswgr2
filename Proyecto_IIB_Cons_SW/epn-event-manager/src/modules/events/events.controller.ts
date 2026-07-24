@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
+import { QueryEventsDto } from './dto/query-events.dto';
 
 @Controller('events')
 export class EventsController {
@@ -12,8 +13,8 @@ export class EventsController {
   }
 
   @Get()
-  findAll() {
-    return this.eventsService.findAll();
+  findAll(@Query() query: QueryEventsDto) {
+    return this.eventsService.findAllPaginated(query);
   }
 
   @Get('source/:source')

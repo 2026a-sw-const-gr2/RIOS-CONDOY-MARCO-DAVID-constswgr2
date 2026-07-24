@@ -2,12 +2,13 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateEventDto } from './dto/create-event.dto';
+import { QueryEventsDto } from './dto/query-events.dto';
 import { CreateEventEntity } from '../../database/entities/create-event.entity';
 import { UpdateEventEntity } from '../../database/entities/update-event.entity';
 import { DeleteEventEntity } from '../../database/entities/delete-event.entity';
 import { QueryEventEntity } from '../../database/entities/query-event.entity';
 
-type EventAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'QUERY';
+export type EventAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'QUERY';
 
 const MAX_FILTER_LENGTH = 120;
 
@@ -142,6 +143,38 @@ export class EventsService {
     merged.sort((a, b) => this.eventTimestamp(a) - this.eventTimestamp(b));
 
     return merged;
+  }
+
+  async findAllPaginated(query: QueryEventsDto): Promise<{
+    data: object[];
+    total: number;
+    page: number;
+    lastPage: number;
+  }> {
+    const page = query.page;
+    const limit = query.limit;
+    const safeSource = query.source?.trim() || undefined;
+    const action = query.action?.toUpperCase() as EventAction | undefined;
+
+    const all = await this.findAll();
+    const filtered = all.filter((e) => {
+      const rec = e as Record<string, unknown>;
+      if (action && rec.action !== action) {
+        return false;
+      }
+      if (safeSource && rec.source !== safeSource) {
+        return false;
+      }
+      return true;
+    });
+
+    const total = filtered.length;
+    const lastPage = Math.max(1, Math.ceil(total / limit));
+    const safePage = Math.min(page, lastPage);
+    const skip = (safePage - 1) * limit;
+    const data = filtered.slice(skip, skip + limit);
+
+    return { data, total, page: safePage, lastPage };
   }
 
   async findBySource(source: string): Promise<object[]> {
