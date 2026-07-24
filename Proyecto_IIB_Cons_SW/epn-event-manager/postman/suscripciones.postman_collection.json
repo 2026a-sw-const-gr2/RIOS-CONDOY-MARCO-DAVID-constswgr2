@@ -1,0 +1,112 @@
+{
+  "info": {
+    "_postman_id": "d6f3a7c8-4d4f-4f4d-9d17-7a2c3d1c8b11",
+    "name": "EPN Event Manager - Suscripciones API",
+    "description": "Colección Postman para demostrar el CRUD de suscripciones con autenticación por X-FIS-EPN-KEY.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Crear suscripción",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-FIS-EPN-KEY",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Plan Basic\",\n  \"precio\": 9.99,\n  \"fechaInicio\": \"2026-06-01\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/suscripciones",
+          "host": ["{{baseUrl}}"],
+          "path": ["suscripciones"]
+        },
+        "description": "Crea una nueva suscripción con validación de entrada."
+      }
+    },
+    {
+      "name": "Obtener suscripción por ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-FIS-EPN-KEY",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/suscripciones/{{suscripcionId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["suscripciones", "{{suscripcionId}}"]
+        },
+        "description": "Consulta una suscripción por su identificador."
+      }
+    },
+    {
+      "name": "Actualizar suscripción",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-FIS-EPN-KEY",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Plan Pro\",\n  \"precio\": 15.5\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/suscripciones/{{suscripcionId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["suscripciones", "{{suscripcionId}}"]
+        },
+        "description": "Actualiza parcialmente una suscripción existente."
+      }
+    },
+    {
+      "name": "Eliminar suscripción",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "X-FIS-EPN-KEY",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/suscripciones/{{suscripcionId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["suscripciones", "{{suscripcionId}}"]
+        },
+        "description": "Elimina una suscripción por su identificador."
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "apiKey",
+      "value": "your-institutional-key"
+    },
+    {
+      "key": "suscripcionId",
+      "value": "replace-with-id"
+    }
+  ]
+}
