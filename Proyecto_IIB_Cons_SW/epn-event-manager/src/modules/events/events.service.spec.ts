@@ -216,4 +216,55 @@ describe('EventsService', () => {
       expect(result.total).toBe(1);
     });
   });
+
+  describe('findByText (Feature F2 #10)', () => {
+    beforeEach(async () => {
+      await service.registerEvent(
+        baseDto({
+          action: 'CREATE',
+          source: 'subscription-manager',
+          title: 'Nueva suscripcion a Spotify',
+          description: 'Plan Premium',
+        }),
+      );
+      await service.registerEvent(
+        baseDto({
+          action: 'CREATE',
+          source: 'academic-portal',
+          title: 'Conferencia de ingenieria',
+          description: 'Evento para alumnos',
+        }),
+      );
+      await service.registerEvent(
+        baseDto({
+          action: 'UPDATE',
+          source: 'subscription-manager',
+          title: 'Cambio en suscripcion mensual',
+          description: 'Cambio del plan',
+        }),
+      );
+    });
+
+    it('encuentra coincidencias case-insensitive en title', async () => {
+      const result = await service.findByText('SPOTIFY');
+      expect(result).toHaveLength(1);
+      expect((result[0] as { title: string }).title).toContain('Spotify');
+    });
+
+    it('encuentra coincidencias en description', async () => {
+      const result = await service.findByText('alumnos');
+      expect(result).toHaveLength(1);
+    });
+
+    it('rechaza query menor a 2 caracteres', async () => {
+      await expect(service.findByText('a')).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it('devuelve array vacio si no hay matches', async () => {
+      const result = await service.findByText('inexistente-xyz');
+      expect(result).toEqual([]);
+    });
+  });
 });

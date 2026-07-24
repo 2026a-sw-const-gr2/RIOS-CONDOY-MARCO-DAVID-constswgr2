@@ -12,6 +12,11 @@ export class EventsController {
     return this.eventsService.registerEvent(dto);
   }
 
+  @Get('search')
+  findByText(@Query('q') q: string) {
+    return this.eventsService.findByText(q);
+  }
+
   @Get()
   findAll(@Query() query: QueryEventsDto) {
     return this.eventsService.findAllPaginated(query);
