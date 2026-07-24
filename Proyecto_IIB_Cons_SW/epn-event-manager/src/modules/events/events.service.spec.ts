@@ -187,9 +187,9 @@ describe('EventsService', () => {
       const query: QueryEventsDto = { page: 1, limit: 10, action: 'CREATE' };
       const result = await service.findAllPaginated(query);
       expect(result.total).toBe(2);
-      expect(result.data.every((e) => (e as { action: string }).action === 'CREATE')).toBe(
-        true,
-      );
+      expect(
+        result.data.every((e) => (e as { action: string }).action === 'CREATE'),
+      ).toBe(true);
     });
 
     it('filtra por source=academic-portal', async () => {
@@ -200,9 +200,11 @@ describe('EventsService', () => {
       };
       const result = await service.findAllPaginated(query);
       expect(result.total).toBe(2);
-      expect(result.data.every((e) => (e as { source: string }).source === 'academic-portal')).toBe(
-        true,
-      );
+      expect(
+        result.data.every(
+          (e) => (e as { source: string }).source === 'academic-portal',
+        ),
+      ).toBe(true);
     });
 
     it('combina filtros action + source', async () => {
