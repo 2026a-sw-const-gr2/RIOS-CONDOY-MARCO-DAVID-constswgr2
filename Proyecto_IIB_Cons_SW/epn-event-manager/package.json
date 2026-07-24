@@ -21,20 +21,22 @@
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/swagger": "^11.0.0",
     "@nestjs/typeorm": "^11.0.1",
     "better-sqlite3": "^12.9.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "csv-parse": "^7.0.1",
+    "csv-stringify": "^6.8.1",
+    "nest-winston": "^1.7.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "swagger-ui-express": "^5.0.1",
     "typeorm": "^0.3.28",
-    "nest-winston": "^1.7.0",
-    "winston": "^3.9.0",
-    "@nestjs/config": "^4.0.0",
-    "@nestjs/swagger": "^11.0.0",
-    "swagger-ui-express": "^5.0.1"
+    "winston": "^3.9.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
