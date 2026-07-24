@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiConsumes, ApiBody, ApiParam } from '@nestjs/swagger';
 import { EventsService } from './events.service';
+import { CreateEventDto } from './dto/create-event.dto';
 import { QueryEventsDto } from './dto/query-events.dto';
 import fs from 'fs';
 import path from 'path';
