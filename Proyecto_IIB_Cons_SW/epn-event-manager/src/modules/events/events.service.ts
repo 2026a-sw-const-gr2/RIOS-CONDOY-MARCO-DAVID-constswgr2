@@ -276,11 +276,22 @@ export class EventsService {
     ]);
 
     const filterActive = (rows: Array<Record<string, unknown>>) =>
-      rows.filter((row) => (row.status ?? 'DRAFT').toString().toUpperCase() !== 'CANCELLED');
+      rows.filter((row) => {
+        const status = row.status;
+        return typeof status === 'string'
+          ? status.toUpperCase() !== 'CANCELLED'
+          : true;
+      });
 
-    const createRows = filterActive(createData as Array<Record<string, unknown>>);
-    const updateRows = filterActive(updateData as Array<Record<string, unknown>>);
-    const deleteRows = filterActive(deleteData as Array<Record<string, unknown>>);
+    const createRows = filterActive(
+      createData as Array<Record<string, unknown>>,
+    );
+    const updateRows = filterActive(
+      updateData as Array<Record<string, unknown>>,
+    );
+    const deleteRows = filterActive(
+      deleteData as Array<Record<string, unknown>>,
+    );
     const queryRows = filterActive(queryData as Array<Record<string, unknown>>);
 
     return {
@@ -288,7 +299,11 @@ export class EventsService {
       update: updateRows.length,
       delete: deleteRows.length,
       query: queryRows.length,
-      total: createRows.length + updateRows.length + deleteRows.length + queryRows.length,
+      total:
+        createRows.length +
+        updateRows.length +
+        deleteRows.length +
+        queryRows.length,
     };
   }
 
