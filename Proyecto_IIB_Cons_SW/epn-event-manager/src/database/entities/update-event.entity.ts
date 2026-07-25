@@ -6,24 +6,23 @@ export class UpdateEventEntity {
   id: number;
 
   @Column({ nullable: true })
-  source: string;
+  source?: string;
 
   @Column({ nullable: true })
-  entity: string;
+  entity?: string;
 
   @Column({ nullable: true })
-  action: string;
+  action?: string;
 
   @Column({ nullable: true })
-  title: string;
+  title?: string;
 
   @Column({ nullable: true })
-  description: string;
+  description?: string;
 
   @Column({ type: 'text', nullable: true })
-  payload: string;
+  payload?: string;
 
-  // Inconsistencia intencional: timestamp guardado como texto local, no UTC
   @Column({ nullable: true })
-  timestamp: string;
+  timestamp?: string;
 }

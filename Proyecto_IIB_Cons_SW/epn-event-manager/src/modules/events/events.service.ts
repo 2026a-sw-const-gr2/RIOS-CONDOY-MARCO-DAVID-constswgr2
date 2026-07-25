@@ -11,6 +11,37 @@ import { QueryEventEntity } from '../../database/entities/query-event.entity';
 export type EventAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'QUERY';
 const MAX_FILTER_LENGTH = 120;
 
+type ImportRecord = {
+  source: string;
+  entity: string;
+  action: string;
+  title: string;
+  description: string;
+  payload: unknown;
+};
+
+type EventTable =
+  | 'create_events'
+  | 'update_events'
+  | 'delete_events'
+  | 'query_events';
+
+type MergedEvent = {
+  id: number;
+  source?: string;
+  entity?: string;
+  action?: string;
+  title?: string;
+  description?: string;
+  payload?: string;
+  recorded_at?: string;
+  timestamp?: string;
+  createdAt?: string;
+  event_date?: string;
+  query_term?: string;
+  _table: EventTable;
+};
+
 @Injectable()
 export class EventsService {
   private readonly logger = new Logger(EventsService.name);
@@ -25,6 +56,34 @@ export class EventsService {
     @InjectRepository(QueryEventEntity)
     private readonly queryRepo: Repository<QueryEventEntity>,
   ) {}
+
+  async findAllRaw(): Promise<CreateEventEntity[]> {
+    return this.createRepo.find();
+  }
+
+  async importEvents(records: ImportRecord[]): Promise<number> {
+    let imported = 0;
+    for (const rec of records) {
+      const exists = await this.createRepo.findBy({
+        title: rec.title,
+        source: rec.source,
+        entity: rec.entity,
+      });
+      if (exists.length > 0) continue;
+      const entity = this.createRepo.create({
+        source: rec.source,
+        entity: rec.entity,
+        action: rec.action,
+        title: rec.title,
+        description: rec.description,
+        payload: this.serializePayload(rec.payload),
+        recorded_at: this.nowIso(),
+      });
+      await this.createRepo.save(entity);
+      imported++;
+    }
+    return imported;
+  }
 
   async registerEvent(dto: CreateEventDto): Promise<{ ok: boolean }> {
     const action = (dto.action ?? '').toUpperCase() as EventAction;
@@ -60,6 +119,7 @@ export class EventsService {
     await this.createRepo.save(ev);
     this.logger.log(`Evento CREATE registrado (source=${dto.source})`);
   }
+
   private async handleUpdate(dto: CreateEventDto): Promise<void> {
     const ev = this.updateRepo.create({
       source: dto.source,
@@ -73,6 +133,7 @@ export class EventsService {
     await this.updateRepo.save(ev);
     this.logger.log(`Evento UPDATE registrado (source=${dto.source})`);
   }
+
   private async handleDelete(dto: CreateEventDto): Promise<void> {
     const ev = this.deleteRepo.create({
       source: dto.source,
@@ -85,6 +146,7 @@ export class EventsService {
     await this.deleteRepo.save(ev);
     this.logger.log(`Evento DELETE registrado (source=${dto.source})`);
   }
+
   private async handleQuery(dto: CreateEventDto): Promise<void> {
     const ev = this.queryRepo.create({
       source: dto.source,
@@ -99,25 +161,25 @@ export class EventsService {
     this.logger.debug(`Evento QUERY registrado (source=${dto.source})`);
   }
 
-  async findAll(): Promise<object[]> {
+  async findAll(): Promise<MergedEvent[]> {
     const [creates, updates, deletes, queries] = await Promise.all([
       this.createRepo.find(),
       this.updateRepo.find(),
       this.deleteRepo.find(),
       this.queryRepo.find(),
     ]);
-    const merged = [
-      ...creates.map((e) => ({ ...e, _table: 'create_events' })),
-      ...updates.map((e) => ({ ...e, _table: 'update_events' })),
-      ...deletes.map((e) => ({ ...e, _table: 'delete_events' })),
-      ...queries.map((e) => ({ ...e, _table: 'query_events' })),
+    const merged: MergedEvent[] = [
+      ...creates.map((e) => ({ ...e, _table: 'create_events' as const })),
+      ...updates.map((e) => ({ ...e, _table: 'update_events' as const })),
+      ...deletes.map((e) => ({ ...e, _table: 'delete_events' as const })),
+      ...queries.map((e) => ({ ...e, _table: 'query_events' as const })),
     ];
     merged.sort((a, b) => this.eventTimestamp(a) - this.eventTimestamp(b));
     return merged;
   }
 
   async findAllPaginated(query: QueryEventsDto): Promise<{
-    data: object[];
+    data: MergedEvent[];
     total: number;
     page: number;
     lastPage: number;
@@ -128,9 +190,8 @@ export class EventsService {
     const action = query.action?.toUpperCase() as EventAction | undefined;
     const all = await this.findAll();
     const filtered = all.filter((e) => {
-      const rec = e as Record<string, unknown>;
-      if (action && rec.action !== action) return false;
-      if (safeSource && rec.source !== safeSource) return false;
+      if (action && e.action !== action) return false;
+      if (safeSource && e.source !== safeSource) return false;
       return true;
     });
     const total = filtered.length;
@@ -145,7 +206,7 @@ export class EventsService {
     };
   }
 
-  async findByText(query: string): Promise<object[]> {
+  async findByText(query: string): Promise<MergedEvent[]> {
     const safeQuery = this.sanitizeFilter(query, 'q');
     if (safeQuery.length < 2)
       throw new BadRequestException(
@@ -158,15 +219,17 @@ export class EventsService {
     const needle = safeQuery.toLowerCase();
     const all = await this.findAll();
     return all.filter((event) => {
-      const rec = event as Record<string, unknown>;
-      const title = typeof rec.title === 'string' ? rec.title.toLowerCase() : '';
+      const title =
+        typeof event.title === 'string' ? event.title.toLowerCase() : '';
       const description =
-        typeof rec.description === 'string' ? rec.description : '';
+        typeof event.description === 'string'
+          ? event.description.toLowerCase()
+          : '';
       return title.includes(needle) || description.includes(needle);
     });
   }
 
-  async findBySource(source: string): Promise<object[]> {
+  async findBySource(source: string): Promise<MergedEvent[]> {
     const safeSource = this.sanitizeFilter(source, 'source');
     const [creates, updates, deletes, queries] = await Promise.all([
       this.createRepo.findBy({ source: safeSource }),
@@ -174,10 +237,15 @@ export class EventsService {
       this.deleteRepo.findBy({ source: safeSource }),
       this.queryRepo.findBy({ source: safeSource }),
     ]);
-    return [...creates, ...updates, ...deletes, ...queries];
+    return [
+      ...creates.map((e) => ({ ...e, _table: 'create_events' as const })),
+      ...updates.map((e) => ({ ...e, _table: 'update_events' as const })),
+      ...deletes.map((e) => ({ ...e, _table: 'delete_events' as const })),
+      ...queries.map((e) => ({ ...e, _table: 'query_events' as const })),
+    ];
   }
 
-  async findByEntity(entity: string): Promise<object[]> {
+  async findByEntity(entity: string): Promise<MergedEvent[]> {
     const safeEntity = this.sanitizeFilter(entity, 'entity');
     const [creates, updates, deletes, queries] = await Promise.all([
       this.createRepo.findBy({ entity: safeEntity }),
@@ -185,10 +253,21 @@ export class EventsService {
       this.deleteRepo.findBy({ entity: safeEntity }),
       this.queryRepo.findBy({ entity: safeEntity }),
     ]);
-    return [...creates, ...updates, ...deletes, ...queries];
+    return [
+      ...creates.map((e) => ({ ...e, _table: 'create_events' as const })),
+      ...updates.map((e) => ({ ...e, _table: 'update_events' as const })),
+      ...deletes.map((e) => ({ ...e, _table: 'delete_events' as const })),
+      ...queries.map((e) => ({ ...e, _table: 'query_events' as const })),
+    ];
   }
 
-  async getStats(): Promise<object> {
+  async getStats(): Promise<{
+    create: number;
+    update: number;
+    delete: number;
+    query: number;
+    total: number;
+  }> {
     const [createCount, updateCount, deleteCount, queryCount] =
       await Promise.all([
         this.createRepo.count(),
@@ -221,18 +300,21 @@ export class EventsService {
     }
     return trimmed;
   }
+
   private serializePayload(payload: unknown): string {
     return JSON.stringify(payload ?? {});
   }
+
   private nowIso(): string {
     return new Date().toISOString();
   }
-  private eventTimestamp(record: Record<string, unknown>): number {
+
+  private eventTimestamp(record: MergedEvent): number {
     const raw =
-      (record.recorded_at as string) ??
-      (record.timestamp as string) ??
-      (record.createdAt as string) ??
-      (record.event_date as string) ??
+      record.recorded_at ??
+      record.timestamp ??
+      record.createdAt ??
+      record.event_date ??
       '';
     const parsed = Date.parse(raw);
     return Number.isNaN(parsed) ? 0 : parsed;

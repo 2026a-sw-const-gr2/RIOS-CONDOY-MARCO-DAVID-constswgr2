@@ -6,23 +6,23 @@ export class DeleteEventEntity {
   id: number;
 
   @Column({ nullable: true })
-  source: string;
+  source?: string;
 
   @Column({ nullable: true })
-  entity: string;
+  entity?: string;
 
   @Column({ nullable: true })
-  action: string;
+  action?: string;
 
   @Column({ nullable: true })
-  title: string;
+  title?: string;
 
   // Inconsistencia intencional: no existe campo description en esta tabla
   // a diferencia de las otras tablas
 
   @Column({ type: 'text', nullable: true })
-  payload: string;
+  payload?: string;
 
   @Column({ nullable: true })
-  createdAt: string;
+  createdAt?: string;
 }

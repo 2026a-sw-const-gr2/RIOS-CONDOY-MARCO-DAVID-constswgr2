@@ -102,6 +102,40 @@ describe('EventsService', () => {
     expect(errors.some((error) => error.property === 'payload')).toBe(true);
   });
 
+  it('findAllRaw devuelve los eventos almacenados en la tabla create', async () => {
+    await service.registerEvent(baseDto({ title: 'evento-raw' }));
+
+    const result = await service.findAllRaw();
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ title: 'evento-raw' });
+  });
+
+  it('importEvents guarda nuevos registros y evita duplicados', async () => {
+    const imported = await service.importEvents([
+      {
+        source: 'subscription-manager',
+        entity: 'suscripcion',
+        action: 'CREATE',
+        title: 'uno',
+        description: 'desc',
+        payload: { nombre: 'Spotify' },
+      },
+      {
+        source: 'subscription-manager',
+        entity: 'suscripcion',
+        action: 'CREATE',
+        title: 'uno',
+        description: 'desc',
+        payload: { nombre: 'Spotify' },
+      },
+    ]);
+
+    expect(imported).toBe(1);
+    expect(createRepo.rows).toHaveLength(1);
+    expect(createRepo.rows[0].payload).toBe(JSON.stringify({ nombre: 'Spotify' }));
+  });
+
   it('findAll ordena eventos de distintas tablas por fecha real, no por string', async () => {
     await service.registerEvent(
       baseDto({ action: 'CREATE', title: 'primero' }),
@@ -138,6 +172,76 @@ describe('EventsService', () => {
     await expect(service.findBySource(longSource)).rejects.toThrow(
       BadRequestException,
     );
+  });
+
+  it('findBySource rechaza un filtro vacío', async () => {
+    await expect(service.findBySource('   ')).rejects.toThrow(
+      BadRequestException,
+    );
+  });
+
+  it('findByEntity rechaza un filtro demasiado largo', async () => {
+    const longEntity = 'x'.repeat(200);
+    await expect(service.findByEntity(longEntity)).rejects.toThrow(
+      BadRequestException,
+    );
+  });
+
+  it('findAll incluye eventos de todas las tablas cuando existen', async () => {
+    await service.registerEvent(baseDto({ action: 'CREATE', title: 'create' }));
+    await service.registerEvent(baseDto({ action: 'UPDATE', title: 'update' }));
+    await service.registerEvent(baseDto({ action: 'DELETE', title: 'delete' }));
+    await service.registerEvent(baseDto({ action: 'QUERY', title: 'query' }));
+
+    const result = await service.findAll();
+
+    expect(result).toHaveLength(4);
+    expect(result.some((event) => (event as { title?: string }).title === 'query')).toBe(true);
+  });
+
+  it('findBySource y findByEntity recorren todos los tipos de eventos', async () => {
+    await service.registerEvent(baseDto({ action: 'CREATE', title: 'create' }));
+    await service.registerEvent(baseDto({ action: 'UPDATE', title: 'update' }));
+    await service.registerEvent(baseDto({ action: 'DELETE', title: 'delete' }));
+    await service.registerEvent(baseDto({ action: 'QUERY', title: 'query' }));
+
+    const bySource = await service.findBySource('subscription-manager');
+    const byEntity = await service.findByEntity('suscripcion');
+
+    expect(bySource).toHaveLength(4);
+    expect(byEntity).toHaveLength(4);
+    expect(bySource.map((event) => event._table)).toEqual(
+      expect.arrayContaining(['create_events', 'update_events', 'delete_events', 'query_events']),
+    );
+  });
+
+  it('findByText usa el title y la description cuando existen', async () => {
+    await service.registerEvent(
+      baseDto({
+        action: 'CREATE',
+        title: 'Título de prueba',
+        description: 'Descripción de prueba',
+      }),
+    );
+
+    const result = await service.findByText('prueba');
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ title: 'Título de prueba' });
+  });
+
+  it('findByText devuelve vacío cuando no hay coincidencias en title ni description', async () => {
+    await service.registerEvent(
+      baseDto({
+        action: 'CREATE',
+        title: 'Título único',
+        description: 'Descripción única',
+      }),
+    );
+
+    const result = await service.findByText('xyz');
+
+    expect(result).toEqual([]);
   });
 
   it('getStats suma correctamente los cuatro contadores', async () => {
@@ -233,6 +337,26 @@ describe('EventsService', () => {
       const result = await service.findAllPaginated(query);
       expect(result.total).toBe(1);
     });
+
+    it('ajusta la página cuando page supera el último disponible', async () => {
+      const query: QueryEventsDto = { page: 10, limit: 2 };
+      const result = await service.findAllPaginated(query);
+      expect(result.page).toBe(2);
+      expect(result.lastPage).toBe(2);
+      expect(result.data).toHaveLength(2);
+    });
+
+    it('devuelve total cero cuando no hay coincidencias para los filtros', async () => {
+      const query: QueryEventsDto = {
+        page: 1,
+        limit: 10,
+        action: 'QUERY',
+        source: 'no-existe',
+      };
+      const result = await service.findAllPaginated(query);
+      expect(result.total).toBe(0);
+      expect(result.data).toEqual([]);
+    });
   });
 
   describe('findByText (Feature F2 #10)', () => {
@@ -276,6 +400,12 @@ describe('EventsService', () => {
 
     it('rechaza query menor a 2 caracteres', async () => {
       await expect(service.findByText('a')).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it('rechaza query demasiado larga', async () => {
+      await expect(service.findByText('x'.repeat(81))).rejects.toBeInstanceOf(
         BadRequestException,
       );
     });
