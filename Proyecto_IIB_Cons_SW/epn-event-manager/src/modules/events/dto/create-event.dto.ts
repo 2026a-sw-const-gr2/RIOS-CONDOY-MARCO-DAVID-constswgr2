@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsObject, IsString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNotEmptyObject,
+  IsObject,
+  IsString,
+  ValidateIf,
+} from 'class-validator';
 
 export class CreateEventDto {
   @IsString()
@@ -21,6 +27,8 @@ export class CreateEventDto {
   @IsNotEmpty()
   description!: string;
 
+  @ValidateIf((o: CreateEventDto) => o.payload !== undefined)
   @IsObject()
-  payload!: any;
+  @IsNotEmptyObject()
+  payload!: unknown;
 }

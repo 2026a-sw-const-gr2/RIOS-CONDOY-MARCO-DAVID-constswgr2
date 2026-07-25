@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { validate } from 'class-validator';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { QueryEventsDto } from './dto/query-events.dto';
@@ -84,6 +85,21 @@ describe('EventsService', () => {
   it('devuelve ok:false para una acción no reconocida, sin lanzar excepción', async () => {
     const result = await service.registerEvent(baseDto({ action: 'PATCH' }));
     expect(result).toEqual({ ok: false });
+  });
+
+  it('rechaza un payload vacío en el DTO del evento', async () => {
+    const dto = new CreateEventDto();
+    Object.assign(dto, {
+      source: 'subscription-manager',
+      entity: 'suscripcion',
+      action: 'CREATE',
+      title: 'Suscripción vacía',
+      description: 'Debe ser rechazada',
+      payload: {},
+    });
+
+    const errors = await validate(dto);
+    expect(errors.some((error) => error.property === 'payload')).toBe(true);
   });
 
   it('findAllRaw devuelve los eventos almacenados en la tabla create', async () => {
