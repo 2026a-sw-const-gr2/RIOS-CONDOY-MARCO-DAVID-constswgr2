@@ -268,19 +268,40 @@ export class EventsService {
     query: number;
     total: number;
   }> {
-    const [createCount, updateCount, deleteCount, queryCount] =
-      await Promise.all([
-        this.createRepo.count(),
-        this.updateRepo.count(),
-        this.deleteRepo.count(),
-        this.queryRepo.count(),
-      ]);
+    const [createData, updateData, deleteData, queryData] = await Promise.all([
+      this.createRepo.find(),
+      this.updateRepo.find(),
+      this.deleteRepo.find(),
+      this.queryRepo.find(),
+    ]);
+
+    type StatsRow = {
+      status?: string | null;
+    };
+
+    const filterActive = (rows: StatsRow[]) =>
+      rows.filter((row) => {
+        const status = row.status;
+        return typeof status === 'string'
+          ? status.toUpperCase() !== 'CANCELLED'
+          : true;
+      });
+
+    const createRows = filterActive(createData as StatsRow[]);
+    const updateRows = filterActive(updateData as StatsRow[]);
+    const deleteRows = filterActive(deleteData as StatsRow[]);
+    const queryRows = filterActive(queryData as StatsRow[]);
+
     return {
-      create: createCount,
-      update: updateCount,
-      delete: deleteCount,
-      query: queryCount,
-      total: createCount + updateCount + deleteCount + queryCount,
+      create: createRows.length,
+      update: updateRows.length,
+      delete: deleteRows.length,
+      query: queryRows.length,
+      total:
+        createRows.length +
+        updateRows.length +
+        deleteRows.length +
+        queryRows.length,
     };
   }
 
