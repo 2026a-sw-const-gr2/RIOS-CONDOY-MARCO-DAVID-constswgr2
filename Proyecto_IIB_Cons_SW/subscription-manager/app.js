@@ -84,9 +84,11 @@ async function sendEvent(action, sub, oldSub) {
 // ---- UTILIDADES ----
 function daysUntil(dia) {
   const today = new Date();
-  let target = new Date(today.getFullYear(), today.getMonth(), dia);
+  let target = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  target.setDate(dia);
   if (target <= today) {
-    target = new Date(today.getFullYear(), today.getMonth() + 1, dia);
+    target = new Date(today.getFullYear(), today.getMonth() + 2, 1);
+    target.setDate(dia);
   }
   return Math.ceil((target - today) / 86400000);
 }
