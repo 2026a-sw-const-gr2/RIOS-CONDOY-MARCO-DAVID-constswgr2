@@ -148,8 +148,10 @@ export class EventsController {
   @ApiOperation({ summary: 'Importar eventos desde archivo JSON o CSV' })
   async importEvents(
     @UploadedFile() file: Express.Multer.File,
-    @Body('merge') _merge = false,
+    @Body('merge') merge = false,
   ): Promise<{ imported: number }> {
+    void merge;
+
     if (!file) {
       throw new Error('Archivo requerido');
     }
@@ -159,7 +161,9 @@ export class EventsController {
       ? file.buffer
       : Buffer.from((file.buffer as ArrayBuffer) ?? new ArrayBuffer(0));
 
-    const ext: string = (originalname.toLowerCase().split('.').pop() ?? '').trim();
+    const ext: string = (
+      originalname.toLowerCase().split('.').pop() ?? ''
+    ).trim();
     if (ext !== 'json' && ext !== 'csv') {
       throw new Error('Formato no soportado. Usa .json o .csv');
     }
