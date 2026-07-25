@@ -27,8 +27,8 @@ export class CreateEventDto {
   @IsNotEmpty()
   description!: string;
 
-  @ValidateIf((o) => o.payload !== undefined)
+  @ValidateIf((o: CreateEventDto) => o.payload !== undefined)
   @IsObject()
   @IsNotEmptyObject()
-  payload!: any;
+  payload!: unknown;
 }
