@@ -268,19 +268,27 @@ export class EventsService {
     query: number;
     total: number;
   }> {
-    const [createCount, updateCount, deleteCount, queryCount] =
-      await Promise.all([
-        this.createRepo.count(),
-        this.updateRepo.count(),
-        this.deleteRepo.count(),
-        this.queryRepo.count(),
-      ]);
+    const [createData, updateData, deleteData, queryData] = await Promise.all([
+      this.createRepo.find(),
+      this.updateRepo.find(),
+      this.deleteRepo.find(),
+      this.queryRepo.find(),
+    ]);
+
+    const filterActive = (rows: Array<Record<string, unknown>>) =>
+      rows.filter((row) => (row.status ?? 'DRAFT').toString().toUpperCase() !== 'CANCELLED');
+
+    const createRows = filterActive(createData as Array<Record<string, unknown>>);
+    const updateRows = filterActive(updateData as Array<Record<string, unknown>>);
+    const deleteRows = filterActive(deleteData as Array<Record<string, unknown>>);
+    const queryRows = filterActive(queryData as Array<Record<string, unknown>>);
+
     return {
-      create: createCount,
-      update: updateCount,
-      delete: deleteCount,
-      query: queryCount,
-      total: createCount + updateCount + deleteCount + queryCount,
+      create: createRows.length,
+      update: updateRows.length,
+      delete: deleteRows.length,
+      query: queryRows.length,
+      total: createRows.length + updateRows.length + deleteRows.length + queryRows.length,
     };
   }
 
