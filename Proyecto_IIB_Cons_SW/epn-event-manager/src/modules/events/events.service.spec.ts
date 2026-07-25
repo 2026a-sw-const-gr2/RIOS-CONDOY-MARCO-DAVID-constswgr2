@@ -133,7 +133,9 @@ describe('EventsService', () => {
 
     expect(imported).toBe(1);
     expect(createRepo.rows).toHaveLength(1);
-    expect(createRepo.rows[0].payload).toBe(JSON.stringify({ nombre: 'Spotify' }));
+    expect(createRepo.rows[0].payload).toBe(
+      JSON.stringify({ nombre: 'Spotify' }),
+    );
   });
 
   it('findAll ordena eventos de distintas tablas por fecha real, no por string', async () => {
@@ -196,7 +198,9 @@ describe('EventsService', () => {
     const result = await service.findAll();
 
     expect(result).toHaveLength(4);
-    expect(result.some((event) => (event as { title?: string }).title === 'query')).toBe(true);
+    expect(
+      result.some((event) => (event as { title?: string }).title === 'query'),
+    ).toBe(true);
   });
 
   it('findBySource y findByEntity recorren todos los tipos de eventos', async () => {
@@ -211,7 +215,12 @@ describe('EventsService', () => {
     expect(bySource).toHaveLength(4);
     expect(byEntity).toHaveLength(4);
     expect(bySource.map((event) => event._table)).toEqual(
-      expect.arrayContaining(['create_events', 'update_events', 'delete_events', 'query_events']),
+      expect.arrayContaining([
+        'create_events',
+        'update_events',
+        'delete_events',
+        'query_events',
+      ]),
     );
   });
 

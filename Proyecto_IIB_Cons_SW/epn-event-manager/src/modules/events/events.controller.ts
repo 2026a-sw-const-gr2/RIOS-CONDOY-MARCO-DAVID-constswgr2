@@ -17,6 +17,10 @@ import type { Response } from 'express';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { QueryEventsDto } from './dto/query-events.dto';
+import { CreateEventHandler } from './handlers/create-event.handler';
+import { UpdateEventHandler } from './handlers/update-event.handler';
+import { DeleteEventHandler } from './handlers/delete-event.handler';
+import { QueryEventHandler } from './handlers/query-event.handler';
 import fs from 'node:fs';
 import path from 'node:path';
 import { parse } from 'csv-parse/sync';
@@ -48,11 +52,29 @@ type ImportedRecord = {
 
 @Controller('events')
 export class EventsController {
-  constructor(private readonly eventsService: EventsService) {}
+  constructor(
+    private readonly eventsService: EventsService,
+    private readonly createHandler: CreateEventHandler,
+    private readonly updateHandler: UpdateEventHandler,
+    private readonly deleteHandler: DeleteEventHandler,
+    private readonly queryHandler: QueryEventHandler,
+  ) {}
 
   @Post()
   registerEvent(@Body() dto: CreateEventDto) {
-    return this.eventsService.registerEvent(dto);
+    const action = (dto.action ?? '').toUpperCase();
+    switch (action) {
+      case 'CREATE':
+        return this.createHandler.handle(dto);
+      case 'UPDATE':
+        return this.updateHandler.handle(dto);
+      case 'DELETE':
+        return this.deleteHandler.handle(dto);
+      case 'QUERY':
+        return this.queryHandler.handle(dto);
+      default:
+        return this.eventsService.registerEvent(dto);
+    }
   }
 
   @Get()
