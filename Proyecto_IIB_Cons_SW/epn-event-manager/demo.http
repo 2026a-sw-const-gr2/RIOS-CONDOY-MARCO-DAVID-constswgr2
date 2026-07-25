@@ -1,0 +1,41 @@
+@baseUrl = http://localhost:3000
+@apiKey = your-institutional-key
+
+### Crear suscripción
+POST {{baseUrl}}/suscripciones
+Content-Type: application/json
+X-FIS-EPN-KEY: {{apiKey}}
+
+{
+  "nombre": "Plan Basic",
+  "precio": 9.99,
+  "fechaInicio": "2026-06-01"
+}
+
+### Obtener suscripción por id
+GET {{baseUrl}}/suscripciones/<id>
+X-FIS-EPN-KEY: {{apiKey}}
+
+### Actualizar suscripción
+PUT {{baseUrl}}/suscripciones/<id>
+Content-Type: application/json
+X-FIS-EPN-KEY: {{apiKey}}
+
+{
+  "nombre": "Plan Pro",
+  "precio": 15.5
+}
+
+### Eliminar suscripción
+DELETE {{baseUrl}}/suscripciones/<id>
+X-FIS-EPN-KEY: {{apiKey}}
+
+### Caso inválido: precio negativo
+POST {{baseUrl}}/suscripciones
+Content-Type: application/json
+X-FIS-EPN-KEY: {{apiKey}}
+
+{
+  "nombre": "Plan Incorrecto",
+  "precio": -1
+}
