@@ -275,7 +275,11 @@ export class EventsService {
       this.queryRepo.find(),
     ]);
 
-    const filterActive = (rows: Array<Record<string, unknown>>) =>
+    type StatsRow = {
+      status?: string | null;
+    };
+
+    const filterActive = (rows: StatsRow[]) =>
       rows.filter((row) => {
         const status = row.status;
         return typeof status === 'string'
@@ -283,16 +287,10 @@ export class EventsService {
           : true;
       });
 
-    const createRows = filterActive(
-      createData as Array<Record<string, unknown>>,
-    );
-    const updateRows = filterActive(
-      updateData as Array<Record<string, unknown>>,
-    );
-    const deleteRows = filterActive(
-      deleteData as Array<Record<string, unknown>>,
-    );
-    const queryRows = filterActive(queryData as Array<Record<string, unknown>>);
+    const createRows = filterActive(createData as StatsRow[]);
+    const updateRows = filterActive(updateData as StatsRow[]);
+    const deleteRows = filterActive(deleteData as StatsRow[]);
+    const queryRows = filterActive(queryData as StatsRow[]);
 
     return {
       create: createRows.length,

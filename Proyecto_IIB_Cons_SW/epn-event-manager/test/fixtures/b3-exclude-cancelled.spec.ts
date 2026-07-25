@@ -5,15 +5,17 @@ import { QueryEventEntity } from '../../src/database/entities/query-event.entity
 import { UpdateEventEntity } from '../../src/database/entities/update-event.entity';
 import { Repository } from 'typeorm';
 
-function fakeRepo<T>(rows: T[] = []) {
+function fakeRepo<T>(rows: T[]) {
   return {
     rows,
-    create: (data: any) => ({ ...data }),
-    save: async (row: any) => row,
+    create: (data: T) => ({ ...data }),
+    save: async (row: T) => row,
     find: async () => rows,
-    findBy: async (query: Record<string, any>) =>
+    findBy: async (query: Record<string, unknown>) =>
       rows.filter((row) =>
-        Object.entries(query).every(([k, v]) => row[k] === v),
+        Object.entries(query).every(
+          ([k, v]) => (row as Record<string, unknown>)[k] === v,
+        ),
       ),
     count: async () => rows.length,
   };
