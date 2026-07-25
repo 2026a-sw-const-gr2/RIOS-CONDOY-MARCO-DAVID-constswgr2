@@ -20,22 +20,48 @@ type ImportRecord = {
   payload: unknown;
 };
 
+type EventTable =
+  | 'create_events'
+  | 'update_events'
+  | 'delete_events'
+  | 'query_events';
+
+type MergedEvent = {
+  id: number;
+  source?: string;
+  entity?: string;
+  action?: string;
+  title?: string;
+  description?: string;
+  payload?: string;
+  recorded_at?: string;
+  timestamp?: string;
+  createdAt?: string;
+  event_date?: string;
+  query_term?: string;
+  _table: EventTable;
+};
+
 @Injectable()
 export class EventsService {
   private readonly logger = new Logger(EventsService.name);
 
   constructor(
-    @InjectRepository(CreateEventEntity) private readonly createRepo: Repository<CreateEventEntity>,
-    @InjectRepository(UpdateEventEntity) private readonly updateRepo: Repository<UpdateEventEntity>,
-    @InjectRepository(DeleteEventEntity) private readonly deleteRepo: Repository<DeleteEventEntity>,
-    @InjectRepository(QueryEventEntity)  private readonly queryRepo:  Repository<QueryEventEntity>,
+    @InjectRepository(CreateEventEntity)
+    private readonly createRepo: Repository<CreateEventEntity>,
+    @InjectRepository(UpdateEventEntity)
+    private readonly updateRepo: Repository<UpdateEventEntity>,
+    @InjectRepository(DeleteEventEntity)
+    private readonly deleteRepo: Repository<DeleteEventEntity>,
+    @InjectRepository(QueryEventEntity)
+    private readonly queryRepo: Repository<QueryEventEntity>,
   ) {}
 
   async findAllRaw(): Promise<CreateEventEntity[]> {
     return this.createRepo.find();
   }
 
-  async importEvents(records: ImportRecord[], _merge: boolean): Promise<number> {
+  async importEvents(records: ImportRecord[]): Promise<number> {
     let imported = 0;
     for (const rec of records) {
       const exists = await this.createRepo.findBy({
@@ -62,19 +88,33 @@ export class EventsService {
   async registerEvent(dto: CreateEventDto): Promise<{ ok: boolean }> {
     const action = (dto.action ?? '').toUpperCase() as EventAction;
     switch (action) {
-      case 'CREATE': await this.handleCreate(dto); return { ok: true };
-      case 'UPDATE': await this.handleUpdate(dto); return { ok: true };
-      case 'DELETE': await this.handleDelete(dto); return { ok: true };
-      case 'QUERY':  await this.handleQuery(dto);  return { ok: true };
-      default: this.logger.warn(`Accion no reconocida: "${dto.action}"`); return { ok: false };
+      case 'CREATE':
+        await this.handleCreate(dto);
+        return { ok: true };
+      case 'UPDATE':
+        await this.handleUpdate(dto);
+        return { ok: true };
+      case 'DELETE':
+        await this.handleDelete(dto);
+        return { ok: true };
+      case 'QUERY':
+        await this.handleQuery(dto);
+        return { ok: true };
+      default:
+        this.logger.warn(`Accion no reconocida: "${dto.action}"`);
+        return { ok: false };
     }
   }
 
   private async handleCreate(dto: CreateEventDto): Promise<void> {
     const ev = this.createRepo.create({
-      source: dto.source, entity: dto.entity, action: dto.action,
-      title: dto.title, description: dto.description,
-      payload: this.serializePayload(dto.payload), recorded_at: this.nowIso(),
+      source: dto.source,
+      entity: dto.entity,
+      action: dto.action,
+      title: dto.title,
+      description: dto.description,
+      payload: this.serializePayload(dto.payload),
+      recorded_at: this.nowIso(),
     });
     await this.createRepo.save(ev);
     this.logger.log(`Evento CREATE registrado (source=${dto.source})`);
@@ -82,9 +122,13 @@ export class EventsService {
 
   private async handleUpdate(dto: CreateEventDto): Promise<void> {
     const ev = this.updateRepo.create({
-      source: dto.source, entity: dto.entity, action: dto.action,
-      title: dto.title, description: dto.description,
-      payload: this.serializePayload(dto.payload), timestamp: this.nowIso(),
+      source: dto.source,
+      entity: dto.entity,
+      action: dto.action,
+      title: dto.title,
+      description: dto.description,
+      payload: this.serializePayload(dto.payload),
+      timestamp: this.nowIso(),
     });
     await this.updateRepo.save(ev);
     this.logger.log(`Evento UPDATE registrado (source=${dto.source})`);
@@ -92,9 +136,12 @@ export class EventsService {
 
   private async handleDelete(dto: CreateEventDto): Promise<void> {
     const ev = this.deleteRepo.create({
-      source: dto.source, entity: dto.entity, action: dto.action,
+      source: dto.source,
+      entity: dto.entity,
+      action: dto.action,
       title: dto.title,
-      payload: this.serializePayload(dto.payload), createdAt: this.nowIso(),
+      payload: this.serializePayload(dto.payload),
+      createdAt: this.nowIso(),
     });
     await this.deleteRepo.save(ev);
     this.logger.log(`Evento DELETE registrado (source=${dto.source})`);
@@ -102,19 +149,26 @@ export class EventsService {
 
   private async handleQuery(dto: CreateEventDto): Promise<void> {
     const ev = this.queryRepo.create({
-      source: dto.source, entity: dto.entity, action: dto.action,
-      title: dto.title, description: dto.description,
-      payload: this.serializePayload(dto.payload), event_date: this.nowIso(),
+      source: dto.source,
+      entity: dto.entity,
+      action: dto.action,
+      title: dto.title,
+      description: dto.description,
+      payload: this.serializePayload(dto.payload),
+      event_date: this.nowIso(),
     });
     await this.queryRepo.save(ev);
     this.logger.debug(`Evento QUERY registrado (source=${dto.source})`);
   }
 
-  async findAll(): Promise<object[]> {
+  async findAll(): Promise<MergedEvent[]> {
     const [creates, updates, deletes, queries] = await Promise.all([
-      this.createRepo.find(), this.updateRepo.find(), this.deleteRepo.find(), this.queryRepo.find(),
+      this.createRepo.find(),
+      this.updateRepo.find(),
+      this.deleteRepo.find(),
+      this.queryRepo.find(),
     ]);
-    const merged = [
+    const merged: MergedEvent[] = [
       ...creates.map((e) => ({ ...e, _table: 'create_events' as const })),
       ...updates.map((e) => ({ ...e, _table: 'update_events' as const })),
       ...deletes.map((e) => ({ ...e, _table: 'delete_events' as const })),
@@ -124,40 +178,58 @@ export class EventsService {
     return merged;
   }
 
-  async findAllPaginated(query: QueryEventsDto): Promise<{ data: object[]; total: number; page: number; lastPage: number }> {
+  async findAllPaginated(query: QueryEventsDto): Promise<{
+    data: MergedEvent[];
+    total: number;
+    page: number;
+    lastPage: number;
+  }> {
     const page = query.page;
     const limit = query.limit;
     const safeSource = query.source?.trim() || undefined;
     const action = query.action?.toUpperCase() as EventAction | undefined;
     const all = await this.findAll();
     const filtered = all.filter((e) => {
-      const rec = e as Record<string, unknown>;
-      if (action && rec.action !== action) return false;
-      if (safeSource && rec.source !== safeSource) return false;
+      if (action && e.action !== action) return false;
+      if (safeSource && e.source !== safeSource) return false;
       return true;
     });
     const total = filtered.length;
     const lastPage = Math.max(1, Math.ceil(total / limit));
     const safePage = Math.min(page, lastPage);
     const skip = (safePage - 1) * limit;
-    return { data: filtered.slice(skip, skip + limit), total, page: safePage, lastPage };
+    return {
+      data: filtered.slice(skip, skip + limit),
+      total,
+      page: safePage,
+      lastPage,
+    };
   }
 
-  async findByText(query: string): Promise<object[]> {
+  async findByText(query: string): Promise<MergedEvent[]> {
     const safeQuery = this.sanitizeFilter(query, 'q');
-    if (safeQuery.length < 2) throw new BadRequestException('El parametro "q" debe tener al menos 2 caracteres');
-    if (safeQuery.length > 80) throw new BadRequestException('El parametro "q" es demasiado largo (max 80 caracteres)');
+    if (safeQuery.length < 2)
+      throw new BadRequestException(
+        'El parametro "q" debe tener al menos 2 caracteres',
+      );
+    if (safeQuery.length > 80)
+      throw new BadRequestException(
+        'El parametro "q" es demasiado largo (max 80 caracteres)',
+      );
     const needle = safeQuery.toLowerCase();
     const all = await this.findAll();
     return all.filter((event) => {
-      const rec = event as Record<string, unknown>;
-      const title = typeof rec.title === 'string' ? rec.title.toLowerCase() : '';
-      const description = typeof rec.description === 'string' ? rec.description.toLowerCase() : '';
+      const title =
+        typeof event.title === 'string' ? event.title.toLowerCase() : '';
+      const description =
+        typeof event.description === 'string'
+          ? event.description.toLowerCase()
+          : '';
       return title.includes(needle) || description.includes(needle);
     });
   }
 
-  async findBySource(source: string): Promise<object[]> {
+  async findBySource(source: string): Promise<MergedEvent[]> {
     const safeSource = this.sanitizeFilter(source, 'source');
     const [creates, updates, deletes, queries] = await Promise.all([
       this.createRepo.findBy({ source: safeSource }),
@@ -165,10 +237,15 @@ export class EventsService {
       this.deleteRepo.findBy({ source: safeSource }),
       this.queryRepo.findBy({ source: safeSource }),
     ]);
-    return [...creates, ...updates, ...deletes, ...queries];
+    return [
+      ...creates.map((e) => ({ ...e, _table: 'create_events' as const })),
+      ...updates.map((e) => ({ ...e, _table: 'update_events' as const })),
+      ...deletes.map((e) => ({ ...e, _table: 'delete_events' as const })),
+      ...queries.map((e) => ({ ...e, _table: 'query_events' as const })),
+    ];
   }
 
-  async findByEntity(entity: string): Promise<object[]> {
+  async findByEntity(entity: string): Promise<MergedEvent[]> {
     const safeEntity = this.sanitizeFilter(entity, 'entity');
     const [creates, updates, deletes, queries] = await Promise.all([
       this.createRepo.findBy({ entity: safeEntity }),
@@ -176,13 +253,28 @@ export class EventsService {
       this.deleteRepo.findBy({ entity: safeEntity }),
       this.queryRepo.findBy({ entity: safeEntity }),
     ]);
-    return [...creates, ...updates, ...deletes, ...queries];
+    return [
+      ...creates.map((e) => ({ ...e, _table: 'create_events' as const })),
+      ...updates.map((e) => ({ ...e, _table: 'update_events' as const })),
+      ...deletes.map((e) => ({ ...e, _table: 'delete_events' as const })),
+      ...queries.map((e) => ({ ...e, _table: 'query_events' as const })),
+    ];
   }
 
-  async getStats(): Promise<object> {
-    const [createCount, updateCount, deleteCount, queryCount] = await Promise.all([
-      this.createRepo.count(), this.updateRepo.count(), this.deleteRepo.count(), this.queryRepo.count(),
-    ]);
+  async getStats(): Promise<{
+    create: number;
+    update: number;
+    delete: number;
+    query: number;
+    total: number;
+  }> {
+    const [createCount, updateCount, deleteCount, queryCount] =
+      await Promise.all([
+        this.createRepo.count(),
+        this.updateRepo.count(),
+        this.deleteRepo.count(),
+        this.queryRepo.count(),
+      ]);
     return {
       create: createCount,
       update: updateCount,
@@ -196,11 +288,15 @@ export class EventsService {
     const trimmed = (value ?? '').trim();
     if (!trimmed) {
       this.logger.warn(`Filtro "${fieldName}" vacio recibido`);
-      throw new BadRequestException(`El parametro "${fieldName}" no puede estar vacio`);
+      throw new BadRequestException(
+        `El parametro "${fieldName}" no puede estar vacio`,
+      );
     }
     if (trimmed.length > MAX_FILTER_LENGTH) {
       this.logger.warn(`Filtro "${fieldName}" excede longitud maxima`);
-      throw new BadRequestException(`El parametro "${fieldName}" es demasiado largo`);
+      throw new BadRequestException(
+        `El parametro "${fieldName}" es demasiado largo`,
+      );
     }
     return trimmed;
   }
@@ -213,12 +309,12 @@ export class EventsService {
     return new Date().toISOString();
   }
 
-  private eventTimestamp(record: Record<string, unknown>): number {
+  private eventTimestamp(record: MergedEvent): number {
     const raw =
-      (record.recorded_at as string) ??
-      (record.timestamp as string) ??
-      (record.createdAt as string) ??
-      (record.event_date as string) ??
+      record.recorded_at ??
+      record.timestamp ??
+      record.createdAt ??
+      record.event_date ??
       '';
     const parsed = Date.parse(raw);
     return Number.isNaN(parsed) ? 0 : parsed;
