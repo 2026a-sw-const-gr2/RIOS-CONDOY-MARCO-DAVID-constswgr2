@@ -4,20 +4,16 @@
 //  Integración con EPN Event Manager
 // =============================================
 
-// URL del EPN Event Manager (corre local con npm run start:dev)
+import { suscripcionesRepo } from './data-access/subscription.repository.js';
+
 const EPN_URL = 'http://localhost:3000/events';
 
-// Estado en memoria + localStorage
-let subs = JSON.parse(localStorage.getItem('epn_subs') || '[]');
 let editId = null;
 
-// ---- PERSISTENCIA ----
 function saveAndRender() {
-  localStorage.setItem('epn_subs', JSON.stringify(subs));
   render();
 }
 
-// ---- TOAST ----
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -25,11 +21,8 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2800);
 }
 
-// ---- LOG DE EVENTOS ----
 function addLog(action, nombre, ok) {
   const container = document.getElementById('log-container');
-
-  // Quitar el mensaje vacío si existe
   const empty = container.querySelector('.log-empty');
   if (empty) empty.remove();
 
@@ -44,13 +37,11 @@ function addLog(action, nombre, ok) {
   item.innerHTML = `[${ts}] <strong>${action}</strong> → ${nombre} — ${statusSpan}`;
   container.prepend(item);
 
-  // Máximo 10 entradas en el log
   while (container.children.length > 10) {
     container.lastChild.remove();
   }
 }
 
-// ---- ENVIAR EVENTO AL EPN EVENT MANAGER ----
 async function sendEvent(action, sub, oldSub) {
   const payload = { ...sub };
   if (oldSub) payload.previous = oldSub;
@@ -58,7 +49,7 @@ async function sendEvent(action, sub, oldSub) {
   const body = {
     source: 'subscription-manager',
     entity: 'Suscripcion',
-    action: action.toUpperCase(),                              // CREATE | UPDATE | DELETE | QUERY
+    action: action.toUpperCase(),
     title: `${action} — ${sub.nombre}`,
     description: `${sub.nombre} | ${sub.plan || 'Sin plan'} | $${parseFloat(sub.valor).toFixed(2)}/mes`,
     payload: payload
@@ -75,13 +66,11 @@ async function sendEvent(action, sub, oldSub) {
     addLog(action.toUpperCase(), sub.nombre, ok);
     return ok;
   } catch (err) {
-    // Hub no disponible — se guarda igualmente en local
     addLog(action.toUpperCase(), sub.nombre, false);
     return false;
   }
 }
 
-// ---- UTILIDADES ----
 function daysUntil(dia) {
   const today = new Date();
   let target = new Date(today.getFullYear(), today.getMonth() + 1, 1);
@@ -117,19 +106,19 @@ function catLabel(cat) {
 
 function escHtml(str) {
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"');
 }
 
-// ---- RENDER PRINCIPAL ----
 function render() {
   const grid   = document.getElementById('sub-grid');
   const empty  = document.getElementById('empty-msg');
 
-  // Limpiar tarjetas previas (dejar solo empty-msg)
   Array.from(grid.querySelectorAll('.sub-card')).forEach(c => c.remove());
+
+  const subs = suscripcionesRepo.findAll();
 
   if (subs.length === 0) {
     empty.style.display = 'block';
@@ -150,13 +139,11 @@ function render() {
     const days = daysUntil(parseInt(sub.dia));
     if (days < minDays) { minDays = days; minName = sub.nombre; }
 
-    // Clase de urgencia del pago
     let dueClass = 'due';
     let duePrefix = '📅';
     if (days <= 3)      { dueClass += ' urgent'; duePrefix = '🔴'; }
     else if (days <= 7) { dueClass += ' soon';   duePrefix = '🟡'; }
 
-    // Crear la tarjeta
     const card = document.createElement('div');
     card.className = 'sub-card';
     card.innerHTML = `
@@ -184,7 +171,6 @@ function updateStats(total, gasto, prox) {
   document.getElementById('stat-prox').textContent  = prox;
 }
 
-// ---- MODAL ----
 function openModal(id) {
   editId = id || null;
   const bg    = document.getElementById('modal-bg');
@@ -192,8 +178,7 @@ function openModal(id) {
   const btn   = document.getElementById('btn-guardar');
 
   if (id) {
-    // Modo edición
-    const sub = subs.find(x => x.id === id);
+    const sub = suscripcionesRepo.findById(id);
     if (!sub) return;
     title.textContent             = 'Editar suscripción';
     btn.textContent               = 'Actualizar';
@@ -204,7 +189,6 @@ function openModal(id) {
     document.getElementById('f-dia').value     = sub.dia;
     document.getElementById('f-metodo').value  = sub.metodo || '';
   } else {
-    // Modo creación
     title.textContent = 'Nueva suscripción';
     btn.textContent   = 'Guardar';
     ['f-nombre','f-plan','f-valor','f-dia','f-metodo'].forEach(id => {
@@ -222,14 +206,11 @@ function closeModal() {
   editId = null;
 }
 
-// Cerrar modal al hacer clic fuera
 document.getElementById('modal-bg').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
 
-// ---- VALIDAR Y GUARDAR ----
 async function guardar() {
-  // Mantenimiento Preventivo: validaciones robustas antes de persistir
   const nombre = document.getElementById('f-nombre').value.trim();
   const valorStr = document.getElementById('f-valor').value;
   const diaStr   = document.getElementById('f-dia').value;
@@ -265,46 +246,36 @@ async function guardar() {
     plan:      document.getElementById('f-plan').value.trim().slice(0, 100),
     valor:     valor.toFixed(2),
     dia:       dia,
-    metodo:    document.getElementById('f-metodo').value.trim().slice(0, 60),
-    updatedAt: new Date().toISOString()
+    metodo:    document.getElementById('f-metodo').value.trim().slice(0, 60)
   };
 
   if (editId) {
-    // UPDATE
-    const idx = subs.findIndex(x => x.id === editId);
-    const old = { ...subs[idx] };
-    sub.id        = editId;
-    sub.createdAt = old.createdAt;
-    subs[idx]     = sub;
+    const old = suscripcionesRepo.findById(editId);
+    const result = suscripcionesRepo.update(editId, sub);
     saveAndRender();
     closeModal();
     showToast('✅ Suscripción actualizada.');
-    await sendEvent('UPDATE', sub, old);
+    await sendEvent('UPDATE', result.updated, result.old);
   } else {
-    // CREATE
-    sub.id        = Date.now().toString();
-    sub.createdAt = new Date().toISOString();
-    subs.push(sub);
+    const created = suscripcionesRepo.create(sub);
     saveAndRender();
     closeModal();
     showToast('✅ Suscripción agregada.');
-    await sendEvent('CREATE', sub);
+    await sendEvent('CREATE', created);
   }
 }
 
-// ---- ELIMINAR ----
 async function deleteSub(id) {
-  const sub = subs.find(x => x.id === id);
+  const sub = suscripcionesRepo.findById(id);
   if (!sub) return;
 
   const confirmar = confirm(`¿Eliminar la suscripción "${sub.nombre}"?`);
   if (!confirmar) return;
 
-  subs = subs.filter(x => x.id !== id);
+  suscripcionesRepo.delete(id);
   saveAndRender();
   showToast('🗑️ Suscripción eliminada.');
   await sendEvent('DELETE', sub);
 }
 
-// ---- INICIO ----
 render();
